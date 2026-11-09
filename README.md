@@ -2,7 +2,9 @@
 
 Aplicativo Android nativo de produtividade pessoal: tarefas com priorização inteligente explicável, planejamento diário, hábitos com sequências, calendário, estatísticas, lembretes, widget e backup. **100% offline**, sem conta, sem internet, sem analytics.
 
-> **APK pronto:** [`release/TaskFlow-1.0.0.apk`](release/TaskFlow-1.0.0.apk) (assinado em modo release, ~2,7 MB, Android 8.0+).
+> **APK pronto:** [`release/TaskFlow-1.1.0.apk`](release/TaskFlow-1.1.0.apk) (~3,6 MB, Android 8.0+). Versão anterior: [`release/TaskFlow-1.0.0.apk`](release/TaskFlow-1.0.0.apk).
+>
+> ⚠️ O 1.1.0 foi assinado com uma chave diferente da do 1.0.0 (a keystore original não estava no ambiente de build). Para atualizar: **Configurações › Dados › Exportar backup**, desinstale o 1.0.0, instale o 1.1.0 e importe o backup. Ou gere o APK com a sua keystore (`./gradlew assembleRelease`) para atualizar por cima.
 
 ---
 
@@ -25,6 +27,8 @@ Atualizações futuras precisam ser assinadas com a mesma chave; se a chave muda
 | **Início** | Saudação por horário, data, progresso diário (anel), pendentes / feitas hoje / atrasadas (tocáveis), **Foco de hoje** com motivo da recomendação, hábitos do dia, próximas tarefas, resumo da matriz de prioridades. |
 | **Tarefas** | Título, descrição, categoria, prioridade (baixa → crítica), criação, prazo, horário, duração, status (pendente / em andamento / concluída / arquivada), tags, subtarefas, lembrete, recorrência e **dependências**. Criar, editar, excluir (com desfazer), duplicar, concluir, adiar, arquivar, promover subtarefa a tarefa. Deslize → conclui, ← adia. |
 | **Captura rápida** | Botão + abre uma linha só. Entende `hoje`, `amanhã`, `seg…dom`, `25/12`, `19h`/`14:30`, `!alta`/`!1..!4`, `#tag`, `@categoria`, `30min`/`1h30m`/`2hrs`. Também por atalho do ícone (pressão longa) e pelo widget. |
+| **Linguagem natural** | A captura rápida entende frases: “Reunião com o João **sexta-feira às 3 da tarde**, **levar contrato**” → sexta 15:00 + subtarefa. Também `dia 12`, `15 de dezembro`, `depois de amanhã`, `daqui a 3 dias`, `semana que vem`, `às 9 e meia`, `meio-dia`, `meia hora`, `durante 2 horas`, `urgente`/`importante`/`sem pressa`. Remove “preciso / tenho que / lembrar de” do título. |
+| **Tarefas a partir de texto (IA no aparelho)** | Compartilhe a **transcrição do Gravador de Voz da Samsung** (texto ou .txt), uma nota, um e-mail ou selecione texto em qualquer app › *Criar tarefas*. O TaskFlow encontra as tarefas, você revisa (título, prazo, subtarefas) e adiciona. Usa **Gemini Nano no aparelho** (ML Kit GenAI / AICore — mesma família de modelo do Galaxy AI) quando disponível; senão, regras locais. Tudo offline, sem custo de API. Também pelo botão *✨ Várias tarefas* na captura rápida. |
 | **Busca e filtros** | Busca sem acento em título, descrição, categoria, tags e subtarefas. Filtros: Hoje, Amanhã, Esta semana, Atrasadas, Sem prazo, Alta prioridade, Concluídas, Arquivadas + filtro por categoria + 4 ordenações. |
 | **Priorização** | Pontuação 0–100 por regras locais, matriz urgente × importante, sinalizadores (urgente, importante, rápida, atrasada, adiada com frequência, bloqueada, desbloqueia outras) e cartão "Por que esta prioridade?" com cada fator e seus pontos. |
 | **Meu dia** | Selecionar tarefas, ordem por **arrastar e soltar** (segure a alça; ações de acessibilidade "mover para cima/baixo"), tempo total vs. disponível, **alerta de sobrecarga**, iniciar/concluir, planejamento automático pelo ranking. |

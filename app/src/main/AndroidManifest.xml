@@ -35,6 +35,27 @@
             <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
         </activity>
 
+        <!-- Share target: Samsung Gravador de Voz transcripts, notes, messages. Also "select text › TaskFlow". -->
+        <activity
+            android:name=".presentation.capture.CaptureActivity"
+            android:exported="true"
+            android:label="@string/capture_label"
+            android:taskAffinity=""
+            android:excludeFromRecents="true"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/Theme.TaskFlow">
+            <intent-filter android:label="@string/capture_label">
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/*" />
+            </intent-filter>
+            <intent-filter android:label="@string/capture_process_label">
+                <action android:name="android.intent.action.PROCESS_TEXT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+
         <receiver android:name=".notifications.ReminderReceiver" android:exported="false" />
         <receiver android:name=".notifications.NotificationActionReceiver" android:exported="false" />
         <receiver android:name=".notifications.RescheduleReceiver" android:exported="false">

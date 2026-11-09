@@ -3,6 +3,7 @@ package com.taskflow.di
 import android.content.Context
 import androidx.room.Room
 import com.taskflow.core.SystemTimeProvider
+import com.taskflow.data.ai.OnDeviceTaskExtractor
 import com.taskflow.core.TimeProvider
 import com.taskflow.data.local.TaskFlowDatabase
 import com.taskflow.data.repository.CategoryRepositoryImpl
@@ -15,6 +16,7 @@ import com.taskflow.domain.repository.HabitRepository
 import com.taskflow.domain.repository.HistoryRepository
 import com.taskflow.domain.repository.PlanRepository
 import com.taskflow.domain.repository.ReminderScheduler
+import com.taskflow.domain.repository.TaskExtractor
 import com.taskflow.domain.repository.TaskRepository
 import com.taskflow.notifications.AlarmReminderScheduler
 import dagger.Binds
@@ -43,4 +45,5 @@ abstract class BindingsModule {
     @Binds abstract fun plan(impl: PlanRepositoryImpl): PlanRepository
     @Binds abstract fun history(impl: HistoryRepositoryImpl): HistoryRepository
     @Binds abstract fun reminders(impl: AlarmReminderScheduler): ReminderScheduler
+    @Binds abstract fun extractor(impl: OnDeviceTaskExtractor): TaskExtractor
 }

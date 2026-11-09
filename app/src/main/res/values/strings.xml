@@ -3,4 +3,6 @@
     <string name="widget_name">TaskFlow · Prioridades</string>
     <string name="widget_description">Próximas tarefas prioritárias com conclusão rápida</string>
     <string name="shortcut_add">Nova tarefa</string>
+    <string name="capture_label">TaskFlow · criar tarefas</string>
+    <string name="capture_process_label">Criar tarefas</string>
 </resources>

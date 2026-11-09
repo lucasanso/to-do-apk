@@ -70,6 +70,7 @@ fun QuickAddSheet(
     var text by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
     val focus = remember { FocusRequester() }
+    val context = androidx.compose.ui.platform.LocalContext.current
     val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val today = vm.time.today()
     val preview = remember(text) { QuickCaptureParser.parse(text, today) }
@@ -93,10 +94,10 @@ fun QuickAddSheet(
                     value = text,
                     onValueChange = { text = it; error = null },
                     modifier = Modifier.weight(1f).focusRequester(focus),
-                    placeholder = { Text("Ex.: Estudar SQL amanhã 19h !alta #sql 45min") },
+                    placeholder = { Text("Ex.: Reunião com o João sexta às 15h, levar contrato") },
                     singleLine = true,
                     isError = error != null,
-                    supportingText = { Text(error ?: "hoje · amanhã · seg · 14h · !alta · #tag · @categoria · 30min") },
+                    supportingText = { Text(error ?: "Escreva natural: “dia 12 às 3 da tarde, urgente” · #tag · @categoria") },
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(onDone = { submit(keepOpen = true) }),
                 )
@@ -110,11 +111,18 @@ fun QuickAddSheet(
                 preview.estimatedMinutes?.let { add(formatMinutes(it)) }
                 preview.categoryHint?.let { add("@$it") }
                 preview.tags.forEach { add("#$it") }
+                if (preview.subtasks.isNotEmpty()) add("${preview.subtasks.size} subtarefa(s)")
             }
             if (chips.isNotEmpty()) Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 chips.take(5).forEach { AssistChip(onClick = {}, label = { Text(it, style = MaterialTheme.typography.labelSmall) }) }
             }
-            TextButton(onClick = onOpenFullEditor) { Text("Abrir editor completo") }
+            Row {
+                TextButton(onClick = onOpenFullEditor) { Text("Abrir editor completo") }
+                TextButton(onClick = {
+                    context.startActivity(com.taskflow.presentation.capture.CaptureActivity.intent(context, text))
+                    onDismiss()
+                }) { Text("✨ Várias tarefas") }
+            }
         }
         // Inside the sheet's own composition, so the text field is attached before focusing.
         LaunchedEffect(Unit) {

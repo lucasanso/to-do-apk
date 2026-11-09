@@ -116,6 +116,7 @@ class QuickAddTaskUseCase @Inject constructor(
                 categoryId = categoryId,
                 estimatedMinutes = parsed.estimatedMinutes,
                 reminderMinutesBefore = if (parsed.dueTime != null) 0 else null,
+                subtasks = parsed.subtasks.mapIndexed { i, t -> com.taskflow.domain.model.Subtask(title = t, position = i) },
             )
         )
     }

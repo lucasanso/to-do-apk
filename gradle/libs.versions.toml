@@ -1,8 +1,8 @@
 [versions]
 agp = "8.7.3"
-kotlin = "2.0.21"
-ksp = "2.0.21-1.0.28"
-hilt = "2.52"
+kotlin = "2.1.21"
+ksp = "2.1.21-2.0.1"
+hilt = "2.56.2"
 androidxHilt = "1.2.0"
 composeBom = "2024.12.01"
 activityCompose = "1.9.3"
@@ -18,6 +18,8 @@ coreKtx = "1.15.0"
 junit = "4.13.2"
 robolectric = "4.14.1"
 androidxTestCore = "1.6.1"
+# 1.0.0-beta2 needs Kotlin >= 2.1; newer betas need Kotlin 2.3+.
+mlkitGenaiPrompt = "1.0.0-beta2"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -54,6 +56,8 @@ androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTes
 compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4" }
 compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
 room-testing = { module = "androidx.room:room-testing", version.ref = "room" }
+
+mlkit-genai-prompt = { module = "com.google.mlkit:genai-prompt", version.ref = "mlkitGenaiPrompt" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
