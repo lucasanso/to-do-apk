@@ -1,6 +1,10 @@
 package com.taskflow.ui
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isDialog
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -52,6 +56,8 @@ class AppSmokeTest {
         rule.onNodeWithContentDescription("Novo hábito").performClick()
         rule.onAllNodes(hasSetTextAction()).onFirst().performTextInput("Praticar Python")
         rule.onNodeWithText("Salvar").performClick()
+        // Back on the habits list (the FAB only exists there), not the edit screen.
+        rule.waitUntil(5_000) { rule.onAllNodesWithContentDescription("Novo hábito").fetchSemanticsNodes().isNotEmpty() }
         waitText("Praticar Python")
         rule.onNodeWithText("Agenda").performClick(); waitText("Semana")
 
@@ -92,7 +98,13 @@ class AppSmokeTest {
         waitText("Adiada 1x")
         rule.onNodeWithContentDescription("Mais").performClick()
         rule.onNodeWithText("Excluir").performClick()
-        rule.onAllNodesWithText("Excluir").onFirst().performClick()
+        waitText("Excluir tarefa?")
+        rule.onNode(hasText("Excluir") and hasAnyAncestor(isDialog())).performClick()
         waitText("Desfazer")
+
+        // Undo brings the task back even though the detail screen has closed.
+        rule.onNodeWithText("Desfazer").performClick()
+        rule.onNodeWithText("Tarefas").performClick()
+        waitText("Relatório mensal")
     }
 }

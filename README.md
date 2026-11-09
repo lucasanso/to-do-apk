@@ -4,6 +4,26 @@ Aplicativo Android nativo de produtividade pessoal: tarefas com priorização in
 
 > **APK pronto:** [`release/TaskFlow-1.0.0.apk`](release/TaskFlow-1.0.0.apk) (assinado em modo release, ~2,7 MB, Android 8.0+).
 
+## Capturas de tela
+
+![Visão geral](docs/screenshots/overview.png)
+
+| Início | Tarefas | Prioridade explicada | Meu dia | Hábitos |
+|---|---|---|---|---|
+| ![](docs/screenshots/01-inicio.png) | ![](docs/screenshots/02-tarefas.png) | ![](docs/screenshots/03-detalhe-prioridade.png) | ![](docs/screenshots/04-meu-dia.png) | ![](docs/screenshots/05-habitos.png) |
+
+| Agenda | Estatísticas | Início (escuro) | Tarefas (escuro) |
+|---|---|---|---|
+| ![](docs/screenshots/06-agenda.png) | ![](docs/screenshots/07-estatisticas.png) | ![](docs/screenshots/08-inicio-escuro.png) | ![](docs/screenshots/09-tarefas-escuro.png) |
+
+Renderizadas do app real com dados de exemplo (o app começa vazio). Para regerar:
+
+```bash
+./gradlew :app:testDebugUnitTest --tests "*ScreenshotTest*" -Pscreenshots
+```
+
+As imagens saem em `app/build/screenshots/`.
+
 ---
 
 ## Instalação no Galaxy S26
@@ -144,7 +164,7 @@ Notificação / widget / atalho ─► deep link para tarefa, filtro de atrasada
 2. **MVP** — Room + repositórios, use cases, priorização, Início, CRUD completo, categorias, Meu dia. Compilação validada.
 3. **Produtividade** — recorrências, hábitos e sequências, agenda mês/semana, notificações (AlarmManager + WorkManager), estatísticas.
 4. **Avançado** — widget Glance, backup/restauração validados, histórico, captura rápida com linguagem natural, atalho, desfazer exclusão, acessibilidade.
-5. **Testes e distribuição** — 68 testes automatizados, correção dos bugs encontrados, APK release com R8 e assinatura.
+5. **Testes e distribuição** — 70 testes automatizados, correção dos bugs encontrados, APK release com R8 e assinatura.
 
 ---
 
@@ -188,7 +208,8 @@ keytool -genkeypair -keystore keystore/taskflow-release.jks -alias taskflow -key
 | `TaskUseCasesTest` | validação, prazo original, ciclo de dependências, lembretes, conclusão/reabertura idempotentes, recorrência, adiamento, exclusão + desfazer, duplicação, promoção de subtarefa, captura rápida |
 | `BackupValidatorTest` | formato, versão, referências, valores inválidos, duplicidades, ciclos |
 | `RoomRepositoryTest` (Robolectric) | persistência real com cascatas, categoria excluída, ordem do plano, backup ida-e-volta, importação inválida não altera dados |
-| `AppSmokeTest` (Robolectric + Compose) | sobe o app real e percorre captura rápida, detalhe, conclusão, todas as abas, criação de hábito, telas secundárias, edição, Meu dia, adiar e excluir |
+| `AppSmokeTest` (Robolectric + Compose) | sobe o app real e percorre captura rápida, detalhe, conclusão, todas as abas, criação de hábito, telas secundárias, edição, Meu dia, adiar, excluir e desfazer |
+| `ScreenshotTest` | gera as capturas de tela acima (só roda com `-Pscreenshots`) |
 
 ## Privacidade e permissões
 

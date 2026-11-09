@@ -118,5 +118,6 @@ val robolectricJars = tasks.register<Sync>("robolectricJars") {
 tasks.withType<Test>().configureEach {
     dependsOn(robolectricJars)
     systemProperty("robolectric.offline", "true")
+    systemProperty("taskflow.screenshots", project.hasProperty("screenshots").toString())
     systemProperty("robolectric.dependency.dir", layout.buildDirectory.dir("robolectric-jars").get().asFile.absolutePath)
 }

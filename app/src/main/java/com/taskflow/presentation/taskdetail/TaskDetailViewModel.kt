@@ -29,7 +29,9 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import com.taskflow.di.AppScope
 import java.time.LocalDate
 import java.time.LocalDateTime
 import javax.inject.Inject
@@ -63,6 +65,7 @@ class TaskDetailViewModel @Inject constructor(
     private val duplicate: DuplicateTaskUseCase,
     private val toggleSub: ToggleSubtaskUseCase,
     private val promote: PromoteSubtaskUseCase,
+    @AppScope private val appScope: CoroutineScope,
 ) : ViewModel() {
     val id: Long = savedState.get<Long>("id") ?: 0L
 
@@ -106,6 +109,8 @@ class TaskDetailViewModel @Inject constructor(
     fun toggleMyDay() = viewModelScope.launch {
         if (state.value.inMyDay) plan.remove(time.today(), id) else plan.add(time.today(), id)
     }
-    fun delete(onDeleted: (Task?) -> Unit) = viewModelScope.launch { onDeleted((delete.invoke(id) as? AppResult.Success)?.value) }
-    fun restore(t: Task) = viewModelScope.launch { restore.invoke(t) }
+    // Deleting closes this screen (the task disappears), which clears this ViewModel.
+    // Delete and undo therefore run in the app scope so the undo snackbar and restore always complete.
+    fun delete(onDeleted: (Task?) -> Unit) = appScope.launch { onDeleted((delete.invoke(id) as? AppResult.Success)?.value) }
+    fun restore(t: Task) = appScope.launch { restore.invoke(t) }
 }

@@ -23,7 +23,16 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Qualifier
 import javax.inject.Singleton
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+
+/** Scope for work that must outlive a screen, e.g. delete + undo after navigating away. */
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class AppScope
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -31,6 +40,9 @@ object DatabaseModule {
     @Provides @Singleton
     fun database(@ApplicationContext context: Context): TaskFlowDatabase =
         Room.databaseBuilder(context, TaskFlowDatabase::class.java, TaskFlowDatabase.NAME).build()
+
+    @Provides @Singleton @AppScope
+    fun appScope(): CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 }
 
 @Module

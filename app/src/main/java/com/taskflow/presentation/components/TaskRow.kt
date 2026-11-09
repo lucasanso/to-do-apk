@@ -80,31 +80,28 @@ fun PriorityCheck(task: Task, onToggle: () -> Unit, modifier: Modifier = Modifie
     }
 }
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
-fun TaskMeta(ui: TaskUi, now: LocalDateTime, showScore: Boolean) {
+fun TaskMeta(ui: TaskUi, now: LocalDateTime) {
     val t = ui.task
     val overdue = DueRules.isOverdue(t, now)
     val muted = MaterialTheme.colorScheme.onSurfaceVariant
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+    androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.Center) {
         formatDue(t.dueDate, t.dueTime, now.toLocalDate())?.let {
             MetaItem(Icons.Outlined.Schedule, it, if (overdue) TaskFlowColors.critical else muted)
         }
         ui.category?.let { c ->
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.align(Alignment.CenterVertically), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(7.dp).clip(CircleShape).background(c.colorArgb.asColor()))
                 Spacer(Modifier.width(4.dp))
-                Text(c.name, style = MaterialTheme.typography.labelSmall, color = muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(c.name, style = MaterialTheme.typography.labelSmall, color = muted, maxLines = 1, softWrap = false)
             }
         }
         if (t.subtasks.isNotEmpty()) MetaItem(Icons.Outlined.Checklist, "${t.subtasks.count { it.done }}/${t.subtasks.size}", muted)
-        t.estimatedMinutes?.let { Text(formatMinutes(it), style = MaterialTheme.typography.labelSmall, color = muted) }
+        t.estimatedMinutes?.let { Text(formatMinutes(it), style = MaterialTheme.typography.labelSmall, color = muted, maxLines = 1, softWrap = false) }
         if (t.recurrence != null) Icon(Icons.Outlined.Repeat, "Recorrente", tint = muted, modifier = Modifier.size(13.dp))
         if (ui.score?.flags?.contains(TaskFlag.BLOCKED) == true) Icon(Icons.Outlined.Lock, "Bloqueada", tint = muted, modifier = Modifier.size(13.dp))
         if (ui.score?.flags?.contains(TaskFlag.PROCRASTINATED) == true) Icon(Icons.Outlined.Snooze, "Adiada com frequência", tint = TaskFlowColors.high, modifier = Modifier.size(13.dp))
-        if (showScore && ui.score != null && t.status.isOpen) {
-            Spacer(Modifier.weight(1f))
-            Text("${ui.score.score}", style = MaterialTheme.typography.labelSmall, color = muted)
-        }
     }
 }
 
@@ -113,7 +110,7 @@ private fun MetaItem(icon: androidx.compose.ui.graphics.vector.ImageVector, text
     Row(verticalAlignment = Alignment.CenterVertically) {
         Icon(icon, null, tint = color, modifier = Modifier.size(13.dp))
         Spacer(Modifier.width(3.dp))
-        Text(text, style = MaterialTheme.typography.labelSmall, color = color, maxLines = 1)
+        Text(text, style = MaterialTheme.typography.labelSmall, color = color, maxLines = 1, softWrap = false)
     }
 }
 
@@ -143,7 +140,11 @@ fun TaskRow(
                 textDecoration = if (done) TextDecoration.LineThrough else null,
                 maxLines = 2, overflow = TextOverflow.Ellipsis,
             )
-            TaskMeta(ui, now, showScore)
+            TaskMeta(ui, now)
+        }
+        if (showScore && ui.score != null && t.status.isOpen) {
+            Text("${ui.score.score}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 8.dp))
         }
         trailing?.invoke()
     }

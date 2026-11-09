@@ -182,10 +182,9 @@ private fun HabitCard(h: HabitWithStats, s: HabitsState, vm: HabitsViewModel, na
                         .background(when { done -> color; scheduled -> MaterialTheme.colorScheme.surfaceContainerHighest; else -> MaterialTheme.colorScheme.surfaceContainer })
                         .clickable(enabled = scheduled || done) { vm.toggle(h.habit.id, d) })
                 }
-                Spacer(Modifier.weight(1f))
-                Text("🔥 ${h.currentStreak}  ·  recorde ${h.bestStreak}  ·  ${(h.completionRate30d * 100).toInt()}%",
-                    style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
+            Text("🔥 ${h.currentStreak} seguidos  ·  recorde ${h.bestStreak}  ·  ${(h.completionRate30d * 100).toInt()}% em 30 dias",
+                style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
         }
     }
 }
