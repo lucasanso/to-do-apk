@@ -8,3 +8,8 @@
     *** Companion;
     kotlinx.serialization.KSerializer serializer(...);
 }
+-keep,includedescriptorclasses class com.taskflow.data.ai.**$$serializer { *; }
+-keepclassmembers class com.taskflow.data.ai.** {
+    *** Companion;
+    kotlinx.serialization.KSerializer serializer(...);
+}

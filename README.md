@@ -1,20 +1,20 @@
 # TaskFlow — Intelligent Personal Productivity
 
-Aplicativo Android nativo de produtividade pessoal: tarefas com priorização inteligente explicável, planejamento diário, hábitos com sequências, calendário, estatísticas, lembretes, widget e backup. **100% offline**, sem conta, sem internet, sem analytics.
+Aplicativo Android nativo de produtividade pessoal: **comandos de voz em português** (criar e concluir tarefas falando), priorização inteligente explicável, planejamento diário, hábitos com sequências, calendário, estatísticas, lembretes, widget e backup. **100% offline**, sem conta, sem internet, sem analytics.
 
-> **APK pronto:** [`release/TaskFlow-1.0.0.apk`](release/TaskFlow-1.0.0.apk) (assinado em modo release, ~2,7 MB, Android 8.0+).
+> **APK pronto:** [`release/TaskFlow-1.1.0.apk`](release/TaskFlow-1.1.0.apk) (assinado em modo release, ~3,7 MB, Android 8.0+). Instala por cima da 1.0.0 sem perder dados.
 
 ## Capturas de tela
 
 ![Visão geral](docs/screenshots/overview.png)
 
-| Início | Tarefas | Prioridade explicada | Meu dia | Hábitos |
+| Hoje | Voz: criar | Voz: concluir | Tarefas | Prioridade explicada |
 |---|---|---|---|---|
-| ![](docs/screenshots/01-inicio.png) | ![](docs/screenshots/02-tarefas.png) | ![](docs/screenshots/03-detalhe-prioridade.png) | ![](docs/screenshots/04-meu-dia.png) | ![](docs/screenshots/05-habitos.png) |
+| ![](docs/screenshots/01-hoje.png) | ![](docs/screenshots/10-voz-criar.png) | ![](docs/screenshots/11-voz-concluir.png) | ![](docs/screenshots/02-tarefas.png) | ![](docs/screenshots/03-detalhe-prioridade.png) |
 
-| Agenda | Estatísticas | Início (escuro) | Tarefas (escuro) |
-|---|---|---|---|
-| ![](docs/screenshots/06-agenda.png) | ![](docs/screenshots/07-estatisticas.png) | ![](docs/screenshots/08-inicio-escuro.png) | ![](docs/screenshots/09-tarefas-escuro.png) |
+| Meu dia | Hábitos | Agenda | Estatísticas | Hoje (escuro) |
+|---|---|---|---|---|
+| ![](docs/screenshots/04-meu-dia.png) | ![](docs/screenshots/05-habitos.png) | ![](docs/screenshots/06-agenda.png) | ![](docs/screenshots/07-estatisticas.png) | ![](docs/screenshots/08-hoje-escuro.png) |
 
 Renderizadas do app real com dados de exemplo (o app começa vazio). Para regerar:
 
@@ -28,34 +28,76 @@ As imagens saem em `app/build/screenshots/`.
 
 ## Instalação no Galaxy S26
 
-1. Copie `release/TaskFlow-1.0.0.apk` para o celular (cabo USB, Google Drive, e-mail para si mesmo etc.).
+1. Copie `release/TaskFlow-1.1.0.apk` para o celular (cabo USB, Google Drive, e-mail para si mesmo etc.).
 2. Abra o arquivo no app **Meus Arquivos**. Na primeira vez, o Android pede para permitir "Instalar apps desconhecidos" para o app usado para abrir — permita.
 3. Se o **Auto Blocker** da Samsung estiver ativo (Configurações › Segurança e privacidade › Auto Blocker), desative-o temporariamente para instalar.
 4. Ao abrir o TaskFlow, permita **notificações**. Para lembretes no minuto exato, vá em *Configurações do app › Notificações › Lembretes pontuais* e ative "Alarmes e lembretes".
 5. Widget: segure a tela inicial › Widgets › TaskFlow · Prioridades.
+6. Voz: no primeiro uso do microfone, permita o acesso. Para atalho de hardware, veja [Voz e IA do S26](#voz-e-ia-do-galaxy-s26).
 
 Atualizações futuras precisam ser assinadas com a mesma chave; se a chave mudar, o Android exige desinstalar antes — exporte um backup em Configurações › Dados e importe depois.
 
 ---
 
+## Voz e IA do Galaxy S26
+
+Toque no **microfone** (botão flutuante) e fale. O mesmo campo aceita texto digitado.
+
+| Você diz | O app faz |
+|---|---|
+| “Me lembra de pagar a fatura amanhã às 3 da tarde” | Cria **Pagar a fatura**, amanhã 15:00, com lembrete |
+| “Reunião com o time toda segunda às 9h30 por uma hora” | Cria tarefa recorrente às segundas, 09:30, duração 1 h |
+| “Estudar SQL todos os dias às 20h” · “Prova dia 20, urgente” | Recorrência diária · prazo dia 20, prioridade crítica |
+| “Dentista daqui a 3 dias às 14h” · “Ligar pro banco semana que vem” | Datas relativas |
+| “Criar dashboard de vendas na categoria engenharia de dados” | Define a categoria |
+| “Já paguei a fatura” · “Concluí o relatório” · “Marca revisar PR como feito” | **Conclui** a tarefa certa (busca aproximada) |
+| “Fiz exercícios” · “Estudei SQL” | Marca o **hábito** como feito hoje |
+
+Depois de cada comando aparece o que foi entendido, com **Desfazer** (e **Ajustar** para abrir a tarefa). Se a frase servir para mais de uma tarefa, o app pergunta qual.
+
+### O que é possível integrar com a IA do S26 (verificado em novembro de 2026)
+
+| Caminho | Situação para um app pessoal instalado por APK | No TaskFlow |
+|---|---|---|
+| **Gemini Nano** (modelo de IA que roda no próprio S26, via AICore + ML Kit Prompt API) | **Disponível.** O S26 tem Gemini Nano; apps de terceiros podem usá-lo, sem internet | **Integrado**: interpreta frases mais soltas e identifica qual tarefa você concluiu. Se não estiver disponível, o interpretador local assume |
+| Gemini (assistente) chamando funções do app (**AppFunctions**, Android 16) | Biblioteca em *release candidate*; a integração com o Gemini está em **prévia fechada** para parceiros selecionados | Não implementado: não há como um app instalado por APK ser chamado pelo Gemini hoje |
+| Gemini executando tarefas em outros apps (automação de tela) | Beta só para apps selecionados (delivery, mercado, transporte) nos EUA e na Coreia | Não se aplica |
+| Bixby (cápsulas de terceiros) | Sem caminho público atual para integrar comandos de voz de apps de terceiros | Não implementado |
+| **Abrir o app por voz ou botão** | Funciona: Bixby e Gemini abrem apps pelo nome, e o botão lateral abre qualquer app | **“TaskFlow Voz”**: entrada separada que abre direto no microfone |
+
+**Atalhos práticos no S26**
+- **Botão lateral:** Configurações › Recursos avançados › Botão lateral › Pressionar duas vezes › Abrir app › **TaskFlow Voz**. Dois toques e já está ouvindo.
+- **Bixby ou Gemini:** “abrir TaskFlow Voz”.
+- **Widget:** o ícone de microfone abre a captura por voz.
+- **Ícone do app (pressão longa):** atalhos *Falar* e *Digitar tarefa*.
+- **De qualquer app:** selecione um texto › *TaskFlow*, ou *Compartilhar › TaskFlow*. A frase é interpretada na hora; dá para mandar uma resposta do Gemini para virar tarefa.
+
+**Privacidade.** O reconhecimento de voz usa o serviço do aparelho, preferindo o modo no aparelho. Em Configurações › Voz e IA, o app mostra se o Português offline está instalado e oferece o download. O Gemini Nano roda no AICore do sistema. O TaskFlow continua **sem permissão de internet**: a biblioteca do ML Kit traz um módulo de telemetria do Google, mas a permissão de rede dele foi removida no manifesto, então nada sai do app.
+
+**Como a interpretação funciona** (`domain/voice`):
+1. **Interpretador local de regras** (sempre ativo, determinístico). Identifica a intenção (criar × concluir) e extrai data (hoje, amanhã, dias da semana, “dia 20”, “15 de dezembro”, “daqui a 3 dias”, “semana que vem”), hora (“às 3 e meia da tarde”, “14:30”, “meio-dia”, “à noite”), duração, prioridade, categoria, tags, recorrência e lembrete. Também entende números por extenso.
+2. **Gemini Nano** (opcional). Devolve um JSON com intenção, título, o trecho que fala de data, categoria e o número do item concluído.
+3. **Fusão com validação.** Datas e horas vêm **sempre** das regras, porque modelos pequenos erram cálculo de data. O título do modelo só é aceito se as palavras estiverem na frase, a categoria só se existir, e o item concluído só se for real e tiver relação com o que foi dito. Qualquer coisa fora disso volta para as regras.
+4. **Busca aproximada** (`TaskMatcher`). Tolera flexão verbal (paguei/pagar, estudei/estudar), acentos e erros de reconhecimento.
+
 ## Funcionalidades
 
 | Área | O que faz |
 |---|---|
-| **Início** | Saudação por horário, data, progresso diário (anel), pendentes / feitas hoje / atrasadas (tocáveis), **Foco de hoje** com motivo da recomendação, hábitos do dia, próximas tarefas, resumo da matriz de prioridades. |
+| **Hoje** | Tela minimalista: saudação, uma linha de progresso do dia (com atrasadas, se houver), **Foco** (tarefas recomendadas) e hábitos do dia. Detalhes ficam a um toque. |
 | **Tarefas** | Título, descrição, categoria, prioridade (baixa → crítica), criação, prazo, horário, duração, status (pendente / em andamento / concluída / arquivada), tags, subtarefas, lembrete, recorrência e **dependências**. Criar, editar, excluir (com desfazer), duplicar, concluir, adiar, arquivar, promover subtarefa a tarefa. Deslize → conclui, ← adia. |
-| **Captura rápida** | Botão + abre uma linha só. Entende `hoje`, `amanhã`, `seg…dom`, `25/12`, `19h`/`14:30`, `!alta`/`!1..!4`, `#tag`, `@categoria`, `30min`/`1h30m`/`2hrs`. Também por atalho do ícone (pressão longa) e pelo widget. |
-| **Busca e filtros** | Busca sem acento em título, descrição, categoria, tags e subtarefas. Filtros: Hoje, Amanhã, Esta semana, Atrasadas, Sem prazo, Alta prioridade, Concluídas, Arquivadas + filtro por categoria + 4 ordenações. |
+| **Captura** | Microfone ou teclado no mesmo lugar (ver [Voz e IA](#voz-e-ia-do-galaxy-s26)). Digitando, também vale a sintaxe compacta `!alta`, `#tag`, `@categoria`. |
+| **Busca e filtros** | Busca sem acento em título, descrição, categoria, tags e subtarefas. Na tela: Abertas, Hoje, Atrasadas, Concluídas. No menu de filtros: Amanhã, Esta semana, Sem prazo, Alta prioridade, Arquivadas, categorias e 4 ordenações. |
 | **Priorização** | Pontuação 0–100 por regras locais, matriz urgente × importante, sinalizadores (urgente, importante, rápida, atrasada, adiada com frequência, bloqueada, desbloqueia outras) e cartão "Por que esta prioridade?" com cada fator e seus pontos. |
 | **Meu dia** | Selecionar tarefas, ordem por **arrastar e soltar** (segure a alça; ações de acessibilidade "mover para cima/baixo"), tempo total vs. disponível, **alerta de sobrecarga**, iniciar/concluir, planejamento automático pelo ranking. |
-| **Hábitos** | Separados das tarefas. Diário, dias específicos, semanal, mensal, a cada N dias. Histórico (últimos 14 dias editáveis), sequência atual, recorde e taxa de 30 dias. Pausar sem perder histórico. |
+| **Hábitos** | Separados das tarefas. Diário, dias específicos, semanal, mensal, a cada N dias. Últimos 7 dias (toque para corrigir um dia) e sequência atual. Pausar sem perder histórico. |
 | **Agenda** | Mês e semana; marcadores de prazos, hábitos e concluídas; dia selecionado lista tudo e permite criar tarefa naquela data. Lê das mesmas tabelas (sem duplicação). |
 | **Notificações** | Lembrete antes do prazo / no horário (com ações *Concluir* e *Adiar 1 dia*), aviso de atrasadas, resumo diário no horário escolhido, lembrete de hábito (ação *Feito*). Cada tipo pode ser desligado. Reagendadas após reiniciar o celular. |
 | **Estatísticas** | Concluídas por dia (14 d) e por semana (8 sem), taxa de conclusão, evolução vs. semana anterior, volume e conclusão por categoria, tarefas mais adiadas, planejado × concluído. |
 | **Categorias** | 9 iniciais (Universidade, Trabalho, Engenharia de Dados, Projetos pessoais, Finanças, Saúde e exercícios, Estudos, Casa, Outros), cor e ícone próprios, editáveis. |
 | **Histórico** | Criação, edição (com resumo do que mudou), conclusão, reabertura, adiamento, arquivamento, exclusão, duplicação, promoção. Sobrevive à exclusão da tarefa. |
 | **Backup** | Exporta/importa JSON pelo seletor de arquivos do Android (sem permissão de armazenamento). Importação valida formato, versão, enums, faixas, referências, duplicidades e ciclos **antes** de tocar no banco; aplica tudo numa transação (tudo ou nada). |
-| **Widget** | Próximas tarefas prioritárias com botão de conclusão rápida, + para nova tarefa, toque abre a tarefa. |
+| **Widget** | Próximas tarefas prioritárias com botão de conclusão rápida, microfone para falar, toque abre a tarefa. |
 | **Tema** | Claro, escuro ou sistema; opção Material You. Edge-to-edge. |
 
 ---
@@ -93,19 +135,22 @@ app/src/main/java/com/taskflow/
 │   ├── model/         Task, Subtask, Category, Habit, RecurrenceRule, HistoryEntry…
 │   ├── engine/        PriorityEngine, RecurrenceCalculator, HabitStreaks, DueRules,
 │   │                  TaskFilters, ProductivityCalculator, QuickCaptureParser
-│   ├── repository/    interfaces (TaskRepository, …, ReminderScheduler)
+│   ├── repository/    interfaces (TaskRepository, …, ReminderScheduler, OnDeviceAi)
+│   ├── voice/         VoiceCommandParser, TaskMatcher, VoiceInterpreter (NLU em pt-BR)
 │   └── usecase/       TaskUseCases, OtherUseCases
 ├── data/
 │   ├── local/         Entities, DAOs, TaskFlowDatabase, Mappers
 │   ├── repository/    implementações Room
 │   ├── settings/      DataStore (SettingsRepository)
+│   ├── ai/            GeminiNanoAi (ML Kit Prompt API / AICore) + NanoPrompt
 │   └── backup/        DTOs, BackupValidator, BackupManager
 ├── di/                módulos Hilt
 ├── notifications/     Notifier, AlarmReminderScheduler, Receivers, Workers, ReminderSync
 ├── widget/            Glance widget + ação de concluir
-├── navigation/        Routes, TaskFlowNavHost (barra inferior, FAB, captura rápida)
-└── presentation/      theme, components, dashboard, tasks, taskdetail, taskedit,
-                       myday, habits, calendar, stats, categories, settings, history, quickadd
+├── navigation/        Routes, TaskFlowNavHost (barra inferior, botão de microfone)
+└── presentation/      theme, components, dashboard, tasks, taskdetail, taskedit, myday,
+                       habits, calendar, stats, categories, settings, history,
+                       voice (SpeechInput, VoiceCaptureSheet, VoiceCaptureActivity)
 app/src/test/…         testes de domínio, use cases, Room/backup (Robolectric) e UI
 app/schemas/           schema exportado do Room (base para migrações futuras)
 ```
@@ -134,12 +179,13 @@ history(id, taskId [sem FK, sobrevive à exclusão], taskTitle, type, details, t
 ## 4. Fluxo de navegação
 
 ```
-Barra inferior: Início · Tarefas · Meu dia · Hábitos · Agenda      (+ FAB: captura rápida / novo hábito)
-Início ──► detalhe da tarefa ──► editar
+Barra inferior: Hoje · Tarefas · Hábitos · Agenda      (+ microfone: falar/digitar · em Hábitos: novo hábito)
+Hoje ──► Planejar dia (Meu dia) | detalhe da tarefa ──► editar
    └─ menu ⋮ ─► Estatísticas · Categorias · Histórico · Configurações
 Tarefas (busca/filtros) ─► detalhe ─► editar | dependências ─► outra tarefa
 Agenda ─► dia ─► detalhe / nova tarefa na data
 Notificação / widget / atalho ─► deep link para tarefa, filtro de atrasadas, hábitos ou captura rápida
+TaskFlow Voz (botão lateral, Bixby/Gemini “abrir”, widget, compartilhar) ─► captura por voz sobre qualquer tela
 ```
 
 ## 5. Priorização inteligente
@@ -164,7 +210,8 @@ Notificação / widget / atalho ─► deep link para tarefa, filtro de atrasada
 2. **MVP** — Room + repositórios, use cases, priorização, Início, CRUD completo, categorias, Meu dia. Compilação validada.
 3. **Produtividade** — recorrências, hábitos e sequências, agenda mês/semana, notificações (AlarmManager + WorkManager), estatísticas.
 4. **Avançado** — widget Glance, backup/restauração validados, histórico, captura rápida com linguagem natural, atalho, desfazer exclusão, acessibilidade.
-5. **Testes e distribuição** — 70 testes automatizados, correção dos bugs encontrados, APK release com R8 e assinatura.
+5. **Testes e distribuição** — testes automatizados, correção dos bugs encontrados, APK release com R8 e assinatura.
+6. **v1.1 — Voz e minimalismo** — comandos de voz (criar/concluir), Gemini Nano no aparelho, entradas do sistema (botão lateral, Bixby/Gemini, widget, compartilhar), interface simplificada (4 abas, linhas e cartões enxutos). Kotlin 2.3, Room 2.8, Hilt 2.58. 108 testes.
 
 ---
 
@@ -208,16 +255,21 @@ keytool -genkeypair -keystore keystore/taskflow-release.jks -alias taskflow -key
 | `TaskUseCasesTest` | validação, prazo original, ciclo de dependências, lembretes, conclusão/reabertura idempotentes, recorrência, adiamento, exclusão + desfazer, duplicação, promoção de subtarefa, captura rápida |
 | `BackupValidatorTest` | formato, versão, referências, valores inválidos, duplicidades, ciclos |
 | `RoomRepositoryTest` (Robolectric) | persistência real com cascatas, categoria excluída, ordem do plano, backup ida-e-volta, importação inválida não altera dados |
-| `AppSmokeTest` (Robolectric + Compose) | sobe o app real e percorre captura rápida, detalhe, conclusão, todas as abas, criação de hábito, telas secundárias, edição, Meu dia, adiar, excluir e desfazer |
+| `VoiceCommandParserTest` | intenção criar × concluir, datas/horas faladas (números por extenso, “3 e meia da tarde”, relativas), duração, prioridade, categoria, recorrência, lembrete, títulos limpos, busca aproximada e ambiguidade |
+| `VoiceInterpreterTest` | fusão regras + Gemini Nano (título inventado rejeitado, categoria inexistente ignorada, alvo inválido descartado), parsing do JSON do modelo, executar e desfazer (tarefa, recorrência, hábito) |
+| `AppSmokeTest` (Robolectric + Compose) | sobe o app real: cria e conclui tarefa por frase, desfaz, detalhe, todas as abas, hábito, telas secundárias, edição, Meu dia, adiar, excluir e desfazer |
+| `VoiceEntryTest` | “Compartilhar → TaskFlow”: a frase compartilhada vira tarefa com data e hora |
 | `ScreenshotTest` | gera as capturas de tela acima (só roda com `-Pscreenshots`) |
 
 ## Privacidade e permissões
 
-Sem permissão de **INTERNET** — o app não tem como transmitir dados. Backup do Android/transferência entre aparelhos desativados; o backup é só o JSON que você exporta. Permissões pedidas: notificações, alarmes exatos (opcional), reagendar após reinício e vibração. `ACCESS_NETWORK_STATE`/`FOREGROUND_SERVICE` aparecem no manifesto final porque vêm da biblioteca WorkManager; não são usadas e não dão acesso à rede.
+Sem permissão de **INTERNET**: o app não tem como transmitir dados. A permissão que a biblioteca do ML Kit adicionaria foi removida no manifesto com `tools:node="remove"`. Backup do Android e transferência entre aparelhos estão desativados; o backup é só o JSON que você exporta. Permissões pedidas: notificações, alarmes exatos (opcional), reagendar após reinício, vibração e **microfone** (só quando você toca para falar). `ACCESS_NETWORK_STATE` e `FOREGROUND_SERVICE` vêm do WorkManager e `BIND_SERVICE` do AICore vem do Gemini Nano; nenhuma delas dá acesso à rede.
 
 ## Limitações conhecidas
 
-- Validado em testes automatizados (incluindo o app completo sob Robolectric), mas **não executado num aparelho físico** durante o desenvolvimento — vale um teste rápido de notificações e widget no S26.
+- Validado em testes automatizados (incluindo o app completo sob Robolectric), mas **não executado num aparelho físico** durante o desenvolvimento. Vale testar no S26 notificações, widget, microfone e Gemini Nano: o ambiente de build não tem microfone nem AICore, então a voz foi testada com o mesmo texto digitado.
+- O Gemini Nano depende do AICore do aparelho e da disponibilidade do modelo; se não estiver pronto, o app usa o interpretador local sem avisar erro. A integração com o **assistente** Gemini (AppFunctions) ainda não está aberta a apps instalados por APK.
+- Sem o pacote de Português offline, o reconhecimento de voz usa o serviço do sistema, que pode processar o áudio na nuvem do provedor (Google/Samsung). O TaskFlow em si não acessa a rede.
 - Sem "Alarmes e lembretes" permitido, o Android pode atrasar lembretes alguns minutos (modo econômico).
 - O widget se atualiza a cada alteração enquanto o app está em memória, ao concluir pelo próprio widget/notificação e a cada 30 min.
 - Interface somente em português (pt-BR).

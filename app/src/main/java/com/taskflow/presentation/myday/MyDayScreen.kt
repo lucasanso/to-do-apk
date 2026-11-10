@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Close
@@ -64,7 +65,7 @@ import com.taskflow.presentation.util.formatLongDate
 import com.taskflow.presentation.util.formatMinutes
 
 @Composable
-fun MyDayScreen(navigate: (String) -> Unit, vm: MyDayViewModel = hiltViewModel()) {
+fun MyDayScreen(navigate: (String) -> Unit, onBack: () -> Unit, vm: MyDayViewModel = hiltViewModel()) {
     val s by vm.state.collectAsStateWithLifecycle()
     var editAvailable by remember { mutableStateOf(false) }
 
@@ -83,9 +84,12 @@ fun MyDayScreen(navigate: (String) -> Unit, vm: MyDayViewModel = hiltViewModel()
 
     LazyColumn(Modifier.fillMaxSize(), state = listState) {
         item {
-            Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 20.dp)) {
-                Text("Meu dia", style = MaterialTheme.typography.headlineMedium)
-                Text(formatLongDate(s.date), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(Modifier.padding(start = 4.dp, end = 20.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Voltar") }
+                Column(Modifier.padding(start = 4.dp)) {
+                    Text("Meu dia", style = MaterialTheme.typography.headlineSmall)
+                    Text(formatLongDate(s.date), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
         item {
@@ -172,7 +176,7 @@ fun MyDayScreen(navigate: (String) -> Unit, vm: MyDayViewModel = hiltViewModel()
         }
         items(s.suggestions, key = { "s" + it.task.id }) { ui ->
             TaskRow(ui, s.now, onClick = { navigate(Routes.taskDetail(ui.task.id)) }, onToggle = { vm.toggle(ui.task.id, true) },
-                modifier = Modifier.animateItem(), showScore = true,
+                modifier = Modifier.animateItem(),
                 trailing = { IconButton(onClick = { vm.add(ui.task.id) }) { Icon(Icons.Outlined.Add, "Adicionar ao dia") } })
         }
         item { Spacer(Modifier.height(96.dp)) }

@@ -41,8 +41,10 @@ import com.taskflow.presentation.habits.HabitEditScreen
 import com.taskflow.presentation.habits.HabitsScreen
 import com.taskflow.presentation.history.HistoryScreen
 import com.taskflow.presentation.myday.MyDayScreen
-import com.taskflow.presentation.quickadd.QuickAddSheet
-import com.taskflow.presentation.quickadd.QuickAddViewModel
+import com.taskflow.presentation.voice.VoiceCaptureSheet
+import com.taskflow.presentation.voice.VoiceViewModel
+import androidx.compose.material.icons.outlined.Mic
+import androidx.compose.runtime.produceState
 import com.taskflow.presentation.settings.SettingsScreen
 import com.taskflow.presentation.stats.StatsScreen
 import com.taskflow.presentation.taskdetail.TaskDetailScreen
@@ -62,8 +64,10 @@ fun TaskFlowNavHost(
     val backStack by nav.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route
     val topLevel = TopLevel.entries.firstOrNull { it.route == currentRoute }
-    var quickAdd by rememberSaveable { mutableStateOf(false) }
-    val quickVm: QuickAddViewModel = hiltViewModel()
+    // null = closed, true = start listening, false = start with the keyboard
+    var capture by rememberSaveable { mutableStateOf<Boolean?>(null) }
+    val voiceVm: VoiceViewModel = hiltViewModel()
+    val voiceFirst by produceState(true) { value = voiceVm.voiceFirst() }
 
     val navigate: (String) -> Unit = { nav.navigate(it) { launchSingleTop = true } }
     val back: () -> Unit = { if (!nav.popBackStack()) Unit }
@@ -71,7 +75,7 @@ fun TaskFlowNavHost(
     LaunchedEffect(pendingRoute.value) {
         pendingRoute.value?.let { route -> runCatching { nav.navigate(route) { launchSingleTop = true } }; pendingRoute.value = null }
     }
-    LaunchedEffect(pendingQuickAdd.value) { if (pendingQuickAdd.value) { quickAdd = true; pendingQuickAdd.value = false } }
+    LaunchedEffect(pendingQuickAdd.value) { if (pendingQuickAdd.value) { capture = false; pendingQuickAdd.value = false } }
 
     CompositionLocalProvider(LocalMessenger provides messenger) {
         Scaffold(
@@ -95,7 +99,9 @@ fun TaskFlowNavHost(
                 }
             },
             floatingActionButton = {
-                if (topLevel != null && topLevel != TopLevel.HABITS) FloatingActionButton(onClick = { quickAdd = true }) { Icon(Icons.Outlined.Add, "Nova tarefa") }
+                if (topLevel != null && topLevel != TopLevel.HABITS) FloatingActionButton(onClick = { capture = voiceFirst }) {
+                    Icon(Icons.Outlined.Mic, "Falar ou digitar uma tarefa")
+                }
                 else if (topLevel == TopLevel.HABITS) FloatingActionButton(onClick = { navigate(Routes.habitEdit()) }) { Icon(Icons.Outlined.Add, "Novo hábito") }
             },
         ) { pad ->
@@ -107,7 +113,7 @@ fun TaskFlowNavHost(
                     navArgument("category") { type = NavType.LongType; defaultValue = -1L },
                     navArgument("search") { type = NavType.BoolType; defaultValue = false },
                 )) { e -> TasksScreen(navigate, startWithSearch = e.arguments?.getBoolean("search") == true) }
-                composable(Routes.MY_DAY) { MyDayScreen(navigate) }
+                composable(Routes.MY_DAY) { MyDayScreen(navigate, onBack = back) }
                 composable(Routes.HABITS) { HabitsScreen(navigate) }
                 composable(Routes.CALENDAR) { CalendarScreen(navigate) }
                 composable(Routes.TASK_DETAIL, arguments = listOf(navArgument("id") { type = NavType.LongType })) { TaskDetailScreen(back, navigate) }
@@ -122,10 +128,14 @@ fun TaskFlowNavHost(
                 composable(Routes.HISTORY) { HistoryScreen(back, navigate) }
             }
         }
-        if (quickAdd) {
-            val defaultDate = if (topLevel == TopLevel.MY_DAY || topLevel == TopLevel.DASHBOARD) quickVm.time.today() else null
-            QuickAddSheet(quickVm, defaultDate, onDismiss = { quickAdd = false },
-                onOpenFullEditor = { quickAdd = false; navigate(Routes.taskEdit(date = defaultDate)) }, onMessage = { messenger.show(it) })
+        capture?.let { voice ->
+            VoiceCaptureSheet(
+                vm = voiceVm,
+                startWithVoice = voice,
+                onDismiss = { capture = null },
+                onOpenTask = { id -> capture = null; navigate(Routes.taskEdit(id)) },
+                onOpenEditor = { capture = null; navigate(Routes.taskEdit()) },
+            )
         }
     }
 }

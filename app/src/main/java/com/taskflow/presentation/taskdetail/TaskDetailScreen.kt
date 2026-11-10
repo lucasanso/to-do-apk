@@ -26,6 +26,9 @@ import androidx.compose.material.icons.automirrored.outlined.CallSplit
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.animation.animateContentSize
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Snooze
@@ -222,15 +225,21 @@ fun TaskDetailScreen(onBack: () -> Unit, navigate: (String) -> Unit, vm: TaskDet
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ScoreCard(score: PriorityScore) {
-    Surface(Modifier.fillMaxWidth().padding(top = 16.dp), shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceContainerLow) {
-        Column(Modifier.padding(16.dp)) {
+    // Collapsed to one line by default; tap to see every factor.
+    var open by remember { mutableStateOf(false) }
+    Surface(onClick = { open = !open }, modifier = Modifier.fillMaxWidth().padding(top = 16.dp), shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow) {
+        Column(Modifier.padding(16.dp).animateContentSize()) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text("Por que esta prioridade?", style = MaterialTheme.typography.titleSmall)
                     Text("${score.quadrant.label} — ${score.quadrant.hint}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Text("${score.score}", style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold), color = MaterialTheme.colorScheme.primary)
+                Icon(if (open) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore, if (open) "Recolher" else "Ver fatores",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 8.dp))
             }
+            if (!open) return@Column
             if (score.flags.isNotEmpty()) FlowRow(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 score.flags.forEach { AssistChip({}, { Text(it.label, style = MaterialTheme.typography.labelSmall) }) }
             }

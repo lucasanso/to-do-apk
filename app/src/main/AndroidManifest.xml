@@ -7,6 +7,23 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- Voice capture (speech is recognized by the device's speech service, preferably on-device). -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!-- Privacy guarantee: ML Kit pulls in Google's telemetry transport, which requests INTERNET.
+         Removing it means the app cannot open network connections at all; Gemini Nano runs in the
+         system's AICore service, which downloads its own model. -->
+    <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
+
+    <queries>
+        <!-- Speech recognition services (package visibility on Android 11+). -->
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+        <intent>
+            <action android:name="android.speech.action.RECOGNIZE_SPEECH" />
+        </intent>
+    </queries>
 
     <application
         android:name=".TaskFlowApp"
@@ -34,6 +51,52 @@
             </intent-filter>
             <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
         </activity>
+
+        <!-- Voice capture shown over any screen. -->
+        <activity
+            android:name=".presentation.voice.VoiceCaptureActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:launchMode="singleTask"
+            android:label="@string/voice_launcher_label"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/Theme.TaskFlow.Translucent">
+            <intent-filter>
+                <action android:name="com.taskflow.VOICE" />
+                <action android:name="com.taskflow.TYPE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <!-- "Compartilhar" a text from any app (e.g. a Gemini answer) into TaskFlow. -->
+            <intent-filter android:label="@string/share_label">
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+            <!-- Text selection menu: select text anywhere → "TaskFlow". -->
+            <intent-filter android:label="@string/share_label">
+                <action android:name="android.intent.action.PROCESS_TEXT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+
+        <!-- Separate "TaskFlow Voz" entry in the app drawer: can be assigned to the side button
+             (double press → open app) and opened by voice ("abrir TaskFlow Voz" in Bixby or Gemini).
+             Can be turned off in Settings. -->
+        <activity-alias
+            android:name="com.taskflow.VoiceLauncher"
+            android:targetActivity=".presentation.voice.VoiceCaptureActivity"
+            android:label="@string/voice_launcher_label"
+            android:icon="@mipmap/ic_voice"
+            android:roundIcon="@mipmap/ic_voice"
+            android:exported="true"
+            android:enabled="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
 
         <receiver android:name=".notifications.ReminderReceiver" android:exported="false" />
         <receiver android:name=".notifications.NotificationActionReceiver" android:exported="false" />

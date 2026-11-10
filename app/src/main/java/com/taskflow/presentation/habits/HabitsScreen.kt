@@ -157,7 +157,7 @@ private fun HabitCard(h: HabitWithStats, s: HabitsState, vm: HabitsViewModel, na
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(h.habit.title, style = MaterialTheme.typography.titleMedium)
-                    Text(listOfNotNull(h.habit.rule.describe(), h.habit.reminderTime?.hhmm(), cat?.name).joinToString(" · "),
+                    Text(listOfNotNull(h.habit.rule.describe(), h.habit.reminderTime?.hhmm()).joinToString(" · "),
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 if (h.dueToday || h.doneToday) {
@@ -171,20 +171,21 @@ private fun HabitCard(h: HabitWithStats, s: HabitsState, vm: HabitsViewModel, na
                 }
             }
             Spacer(Modifier.height(10.dp))
-            // Last 14 days strip: filled = done, outlined = scheduled & missed, faint = not scheduled.
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+            // Last 7 days: filled = done, grey = scheduled, faint = not scheduled. Tap a day to fix it.
+            Row(horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
                 val color = cat?.colorArgb?.asColor() ?: MaterialTheme.colorScheme.primary
-                (13 downTo 0).forEach { off ->
+                (6 downTo 0).forEach { off ->
                     val d = s.today.minusDays(off.toLong())
                     val done = d in h.recentLog
                     val scheduled = RecurrenceCalculator.occursOn(h.habit.rule, h.habit.startDate, d)
-                    Box(Modifier.size(14.dp).clip(RoundedCornerShape(4.dp))
+                    Box(Modifier.size(12.dp).clip(CircleShape)
                         .background(when { done -> color; scheduled -> MaterialTheme.colorScheme.surfaceContainerHighest; else -> MaterialTheme.colorScheme.surfaceContainer })
                         .clickable(enabled = scheduled || done) { vm.toggle(h.habit.id, d) })
                 }
+                Spacer(Modifier.weight(1f))
+                if (h.currentStreak > 0) Text("🔥 ${h.currentStreak}", style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.semantics { contentDescription = "Sequência de ${h.currentStreak}" })
             }
-            Text("🔥 ${h.currentStreak} seguidos  ·  recorde ${h.bestStreak}  ·  ${(h.completionRate30d * 100).toInt()}% em 30 dias",
-                style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
         }
     }
 }

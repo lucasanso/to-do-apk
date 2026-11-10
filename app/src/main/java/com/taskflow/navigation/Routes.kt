@@ -3,7 +3,6 @@ package com.taskflow.navigation
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Checklist
-import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Loop
 import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -30,9 +29,8 @@ object Routes {
 }
 
 enum class TopLevel(val route: String, val navRoute: String, val label: String, val icon: ImageVector) {
-    DASHBOARD(Routes.DASHBOARD, Routes.DASHBOARD, "Início", Icons.Outlined.Home),
+    DASHBOARD(Routes.DASHBOARD, Routes.DASHBOARD, "Hoje", Icons.Outlined.WbSunny),
     TASKS(Routes.TASKS, Routes.tasks(), "Tarefas", Icons.Outlined.Checklist),
-    MY_DAY(Routes.MY_DAY, Routes.MY_DAY, "Meu dia", Icons.Outlined.WbSunny),
     HABITS(Routes.HABITS, Routes.HABITS, "Hábitos", Icons.Outlined.Loop),
     CALENDAR(Routes.CALENDAR, Routes.CALENDAR, "Agenda", Icons.Outlined.CalendarMonth),
 }

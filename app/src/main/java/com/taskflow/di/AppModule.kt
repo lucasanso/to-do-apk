@@ -55,4 +55,5 @@ abstract class BindingsModule {
     @Binds abstract fun plan(impl: PlanRepositoryImpl): PlanRepository
     @Binds abstract fun history(impl: HistoryRepositoryImpl): HistoryRepository
     @Binds abstract fun reminders(impl: AlarmReminderScheduler): ReminderScheduler
+    @Binds abstract fun onDeviceAi(impl: com.taskflow.data.ai.GeminiNanoAi): com.taskflow.domain.repository.OnDeviceAi
 }

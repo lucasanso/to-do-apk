@@ -97,11 +97,8 @@ fun TaskMeta(ui: TaskUi, now: LocalDateTime) {
                 Text(c.name, style = MaterialTheme.typography.labelSmall, color = muted, maxLines = 1, softWrap = false)
             }
         }
-        if (t.subtasks.isNotEmpty()) MetaItem(Icons.Outlined.Checklist, "${t.subtasks.count { it.done }}/${t.subtasks.size}", muted)
-        t.estimatedMinutes?.let { Text(formatMinutes(it), style = MaterialTheme.typography.labelSmall, color = muted, maxLines = 1, softWrap = false) }
-        if (t.recurrence != null) Icon(Icons.Outlined.Repeat, "Recorrente", tint = muted, modifier = Modifier.size(13.dp))
-        if (ui.score?.flags?.contains(TaskFlag.BLOCKED) == true) Icon(Icons.Outlined.Lock, "Bloqueada", tint = muted, modifier = Modifier.size(13.dp))
-        if (ui.score?.flags?.contains(TaskFlag.PROCRASTINATED) == true) Icon(Icons.Outlined.Snooze, "Adiada com frequência", tint = TaskFlowColors.high, modifier = Modifier.size(13.dp))
+        // Minimal by design: deadline and category only. Everything else lives in the task detail.
+        if (ui.score?.flags?.contains(TaskFlag.BLOCKED) == true) Icon(Icons.Outlined.Lock, "Bloqueada", tint = muted, modifier = Modifier.size(12.dp).align(Alignment.CenterVertically))
     }
 }
 
@@ -121,13 +118,12 @@ fun TaskRow(
     onClick: () -> Unit,
     onToggle: () -> Unit,
     modifier: Modifier = Modifier,
-    showScore: Boolean = false,
     trailing: (@Composable () -> Unit)? = null,
 ) {
     val t = ui.task
     val done = t.status == TaskStatus.DONE
     Row(
-        modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background).clickable(onClick = onClick).padding(start = 8.dp, end = 12.dp, top = 6.dp, bottom = 6.dp),
+        modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background).clickable(onClick = onClick).padding(start = 8.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         PriorityCheck(t, onToggle)
@@ -140,11 +136,7 @@ fun TaskRow(
                 textDecoration = if (done) TextDecoration.LineThrough else null,
                 maxLines = 2, overflow = TextOverflow.Ellipsis,
             )
-            TaskMeta(ui, now)
-        }
-        if (showScore && ui.score != null && t.status.isOpen) {
-            Text("${ui.score.score}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 8.dp))
+            if (t.dueDate != null || ui.category != null) TaskMeta(ui, now)
         }
         trailing?.invoke()
     }
@@ -159,7 +151,6 @@ fun SwipeableTaskRow(
     onToggle: () -> Unit,
     onPostpone: () -> Unit,
     modifier: Modifier = Modifier,
-    showScore: Boolean = false,
 ) {
     val state = rememberSwipeToDismissBoxState(confirmValueChange = { v ->
         when (v) {
@@ -185,6 +176,6 @@ fun SwipeableTaskRow(
             }
         },
     ) {
-        TaskRow(ui, now, onClick, onToggle, showScore = showScore)
+        TaskRow(ui, now, onClick, onToggle)
     }
 }

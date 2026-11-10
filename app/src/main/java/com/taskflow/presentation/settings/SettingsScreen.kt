@@ -141,6 +141,8 @@ fun SettingsScreen(onBack: () -> Unit, requestNotificationPermission: () -> Unit
             }
             if (Build.VERSION.SDK_INT >= 31) ToggleRow("Cores do sistema (Material You)", "Usa a paleta do papel de parede", s.dynamicColor) { v -> vm.update { it.copy(dynamicColor = v) } }
 
+            VoiceSettingsSection(s, onUpdate = { f -> vm.update(f) })
+
             SectionHeader("Notificações")
             if (!vm.notifier.canPost()) ActionRow("Permitir notificações", "O Android está bloqueando as notificações do app", requestNotificationPermission)
             if (!vm.scheduler.canScheduleExact() && Build.VERSION.SDK_INT >= 31) ActionRow("Lembretes pontuais", "Permita \"Alarmes e lembretes\" para disparos no minuto exato") {

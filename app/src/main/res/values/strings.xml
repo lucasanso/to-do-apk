@@ -2,5 +2,8 @@
     <string name="app_name">TaskFlow</string>
     <string name="widget_name">TaskFlow · Prioridades</string>
     <string name="widget_description">Próximas tarefas prioritárias com conclusão rápida</string>
-    <string name="shortcut_add">Nova tarefa</string>
+    <string name="shortcut_add">Digitar tarefa</string>
+    <string name="shortcut_voice">Falar</string>
+    <string name="voice_launcher_label">TaskFlow Voz</string>
+    <string name="share_label">TaskFlow</string>
 </resources>

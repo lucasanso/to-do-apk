@@ -7,6 +7,13 @@ import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.Role
 import androidx.room.Room
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
@@ -55,17 +62,26 @@ class ScreenshotTest {
     @Test fun light() {
         seed()
         ActivityScenario.launch(MainActivity::class.java).use { sc -> scenario = sc
-            waitText("FOCO DE HOJE"); shot("01-inicio")
-            rule.onNodeWithText("Tarefas").performClick(); waitText("Esta semana", true); shot("02-tarefas")
+            waitText("FOCO"); shot("01-hoje")
+            tab("Tarefas"); waitText("Abertas"); shot("02-tarefas")
             rule.onAllNodesWithText("Corrigir pipeline de ingestão no Airflow").onFirst().performClick()
-            waitText("Por que esta prioridade?"); shot("03-detalhe-prioridade")
-            rule.onNodeWithContentDescription("Voltar").performClick(); waitText("Esta semana", true)
-            rule.onNodeWithText("Meu dia").performClick(); waitText("ORDEM DE EXECUÇÃO"); shot("04-meu-dia")
-            rule.onNodeWithText("Hábitos").performClick(); waitText("HOJE"); shot("05-habitos")
-            rule.onNodeWithText("Agenda").performClick(); waitText("Semana"); shot("06-agenda")
-            rule.onNodeWithText("Início").performClick(); waitText("FOCO DE HOJE")
+            waitText("Por que esta prioridade?")
+            rule.onNodeWithText("Por que esta prioridade?").performClick()
+            waitText("Prioridade crítica"); shot("03-detalhe-prioridade")
+            rule.onNodeWithContentDescription("Voltar").performClick(); waitText("Abertas")
+            tab("Hábitos"); waitText("HOJE"); shot("05-habitos")
+            tab("Agenda"); waitText("Semana"); shot("06-agenda")
+            tab("Hoje"); waitText("FOCO")
+            rule.onNodeWithText("Planejar dia").performClick(); waitText("ORDEM DE EXECUÇÃO"); shot("04-meu-dia")
+            rule.onNodeWithContentDescription("Voltar").performClick(); waitText("FOCO")
             rule.onNodeWithContentDescription("Mais opções").performClick()
             rule.onNodeWithText("Estatísticas").performClick(); waitText("CONCLUÍDAS POR DIA"); shot("07-estatisticas")
+            rule.onNodeWithContentDescription("Voltar").performClick(); waitText("FOCO")
+
+            // Voice capture (typed here: there is no microphone under Robolectric; same interpreter).
+            openCapture()
+            say("Reunião com o time amanhã às 3 da tarde por uma hora"); waitText("Tarefa criada"); shot("10-voz-criar")
+            say("já paguei a fatura do cartão"); waitText("Concluída"); shot("11-voz-concluir")
         }
     }
 
@@ -73,8 +89,8 @@ class ScreenshotTest {
     fun dark() {
         seed()
         ActivityScenario.launch(MainActivity::class.java).use { sc -> scenario = sc
-            waitText("FOCO DE HOJE"); shot("08-inicio-escuro")
-            rule.onNodeWithText("Tarefas").performClick(); waitText("Esta semana", true); shot("09-tarefas-escuro")
+            waitText("FOCO"); shot("08-hoje-escuro")
+            tab("Tarefas"); waitText("Abertas"); shot("09-tarefas-escuro")
         }
     }
 
@@ -82,15 +98,46 @@ class ScreenshotTest {
         rule.onAllNodesWithText(text, substring = substring).fetchSemanticsNodes().isNotEmpty()
     }
 
+    private fun tab(name: String) = rule.onNode(hasText(name) and
+        SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab)).performClick()
+
+    private fun openCapture() {
+        rule.onNodeWithContentDescription("Falar ou digitar uma tarefa").performClick()
+        fun has(desc: String) = rule.onAllNodesWithContentDescription(desc).fetchSemanticsNodes().isNotEmpty()
+        rule.waitUntil(5_000) { has("Digitar") || has("Enviar") }
+        if (!has("Enviar")) rule.onNodeWithContentDescription("Digitar").performClick()
+        rule.waitUntil(5_000) { has("Enviar") }
+    }
+
+    private fun say(text: String) {
+        rule.onNode(hasSetTextAction()).performTextInput(text)
+        rule.onNodeWithContentDescription("Enviar").performClick()
+    }
+
     private lateinit var scenario: ActivityScenario<MainActivity>
 
-    /** Draws the activity window into a bitmap (software canvas under Robolectric native graphics). */
+    /**
+     * Draws every window of the app (activity + bottom sheets/dialogs, in z-order) into one bitmap,
+     * using Robolectric's native graphics.
+     */
     private fun shot(name: String) {
         rule.waitForIdle()
+        Thread.sleep(400) // let sheet/fade animations settle
+        rule.waitForIdle()
         scenario.onActivity { a ->
-            val v = a.window.decorView
-            val bmp = Bitmap.createBitmap(v.width, v.height, Bitmap.Config.ARGB_8888)
-            v.draw(android.graphics.Canvas(bmp))
+            val decor = a.window.decorView
+            val bmp = Bitmap.createBitmap(decor.width, decor.height, Bitmap.Config.ARGB_8888)
+            val canvas = android.graphics.Canvas(bmp)
+            val roots = runCatching {
+                val wmg = Class.forName("android.view.WindowManagerGlobal")
+                val inst = wmg.getMethod("getInstance").invoke(null)
+                val f = wmg.getDeclaredField("mViews").apply { isAccessible = true }
+                @Suppress("UNCHECKED_CAST") (f.get(inst) as List<android.view.View>).toList()
+            }.getOrDefault(listOf(decor))
+            roots.filter { it.isShown && it.width > 0 }.forEach { v ->
+                val loc = IntArray(2); v.getLocationOnScreen(loc)
+                canvas.save(); canvas.translate(loc[0].toFloat(), loc[1].toFloat()); v.draw(canvas); canvas.restore()
+            }
             File(out, "$name.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
         }
     }

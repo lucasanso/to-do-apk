@@ -97,9 +97,10 @@ class TaskWidget : GlanceAppWidget() {
             Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text("Prioridades", style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 16.sp, color = GlanceTheme.colors.onSurface),
                     modifier = GlanceModifier.defaultWeight().clickable(actionStartActivity(Intent(ctx, MainActivity::class.java))))
-                Image(ImageProvider(R.drawable.ic_add), "Nova tarefa", GlanceModifier.size(28.dp).clickable(
-                    actionStartActivity(Intent(ctx, MainActivity::class.java)
-                        .putExtra(MainActivity.EXTRA_QUICK_ADD, true).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP))))
+                Image(ImageProvider(R.drawable.ic_mic), "Falar com o TaskFlow", GlanceModifier.size(30.dp).clickable(
+                    actionStartActivity(Intent(ctx, com.taskflow.presentation.voice.VoiceCaptureActivity::class.java)
+                        .setAction(com.taskflow.presentation.voice.VoiceCaptureActivity.ACTION_VOICE)
+                        .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK))))
             }
             Spacer(GlanceModifier.height(8.dp))
             if (rows.isEmpty()) {

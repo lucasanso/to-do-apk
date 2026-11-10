@@ -40,7 +40,8 @@ class TaskMutationSupport @Inject constructor(
 }
 
 class SaveTaskUseCase @Inject constructor(private val s: TaskMutationSupport) {
-    suspend operator fun invoke(input: Task): AppResult<Long> = appRunCatching {
+    /** [note] is recorded in the history of a new task (e.g. "por voz"). */
+    suspend operator fun invoke(input: Task, note: String = ""): AppResult<Long> = appRunCatching {
         val title = input.title.trim()
         if (title.isEmpty()) fail(AppError.Validation("O título é obrigatório"))
         if (title.length > 200) fail(AppError.Validation("Título muito longo (máx. 200)"))
@@ -61,7 +62,7 @@ class SaveTaskUseCase @Inject constructor(private val s: TaskMutationSupport) {
         )
         val id = s.tasks.upsert(task)
         val saved = task.copy(id = id)
-        s.log(saved, if (existing == null) HistoryType.CREATED else HistoryType.UPDATED, changeSummary(existing, saved))
+        s.log(saved, if (existing == null) HistoryType.CREATED else HistoryType.UPDATED, if (existing == null) note else changeSummary(existing, saved))
         s.syncReminder(saved)
         id
     }

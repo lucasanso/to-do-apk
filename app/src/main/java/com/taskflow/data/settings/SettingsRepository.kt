@@ -27,6 +27,10 @@ data class AppSettings(
     val habitReminders: Boolean = true,
     val defaultAvailableMinutes: Int = 6 * 60,
     val defaultReminderMinutes: Int = 30,
+    /** Use Gemini Nano (on-device) to understand voice commands when the device supports it. */
+    val useOnDeviceAi: Boolean = true,
+    /** The capture button starts listening right away (otherwise opens the keyboard). */
+    val voiceFirst: Boolean = true,
 )
 
 private val Context.dataStore by preferencesDataStore("settings")
@@ -43,6 +47,8 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val habits = booleanPreferencesKey("habit_reminders")
         val available = intPreferencesKey("default_available")
         val defaultReminder = intPreferencesKey("default_reminder")
+        val onDeviceAi = booleanPreferencesKey("on_device_ai")
+        val voiceFirst = booleanPreferencesKey("voice_first")
     }
 
     val settings: Flow<AppSettings> = context.dataStore.data.map(::map)
@@ -59,6 +65,8 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         habitReminders = p[K.habits] ?: true,
         defaultAvailableMinutes = p[K.available] ?: (6 * 60),
         defaultReminderMinutes = p[K.defaultReminder] ?: 30,
+        useOnDeviceAi = p[K.onDeviceAi] ?: true,
+        voiceFirst = p[K.voiceFirst] ?: true,
     )
 
     suspend fun update(transform: (AppSettings) -> AppSettings) {
@@ -73,6 +81,8 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
             p[K.habits] = s.habitReminders
             p[K.available] = s.defaultAvailableMinutes.coerceIn(15, 24 * 60)
             p[K.defaultReminder] = s.defaultReminderMinutes.coerceIn(0, 7 * 24 * 60)
+            p[K.onDeviceAi] = s.useOnDeviceAi
+            p[K.voiceFirst] = s.voiceFirst
         }
     }
 }
