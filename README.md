@@ -1,20 +1,20 @@
 # TaskFlow — Intelligent Personal Productivity
 
-Aplicativo Android nativo de produtividade pessoal: **comandos de voz em português** (criar e concluir tarefas falando), priorização inteligente explicável, planejamento diário, hábitos com sequências, calendário, estatísticas, lembretes, widget e backup. **100% offline**, sem conta, sem internet, sem analytics.
+Aplicativo Android nativo de produtividade pessoal: **comandos de voz em português** (criar, concluir e apagar tarefas falando), priorização inteligente explicável, planejamento diário, hábitos com sequências, calendário, estatísticas, lembretes, widget e backup. **100% offline**, sem conta, sem internet, sem analytics.
 
-> **APK pronto:** [`release/TaskFlow-1.1.0.apk`](release/TaskFlow-1.1.0.apk) (assinado em modo release, ~3,7 MB, Android 8.0+). Instala por cima da 1.0.0 sem perder dados.
+> **APK pronto:** [`release/TaskFlow-1.2.0.apk`](release/TaskFlow-1.2.0.apk) (assinado em modo release, ~3,7 MB, Android 8.0+). Instala por cima das versões anteriores sem perder dados.
 
 ## Capturas de tela
 
 ![Visão geral](docs/screenshots/overview.png)
 
-| Hoje | Voz: criar | Voz: concluir | Tarefas | Prioridade explicada |
+| Hoje | Voz: criar | Voz: concluir | Voz: apagar | Tarefas |
 |---|---|---|---|---|
-| ![](docs/screenshots/01-hoje.png) | ![](docs/screenshots/10-voz-criar.png) | ![](docs/screenshots/11-voz-concluir.png) | ![](docs/screenshots/02-tarefas.png) | ![](docs/screenshots/03-detalhe-prioridade.png) |
+| ![](docs/screenshots/01-hoje.png) | ![](docs/screenshots/10-voz-criar.png) | ![](docs/screenshots/11-voz-concluir.png) | ![](docs/screenshots/12-voz-apagar.png) | ![](docs/screenshots/02-tarefas.png) |
 
-| Meu dia | Hábitos | Agenda | Estatísticas | Hoje (escuro) |
+| Prioridade explicada | Meu dia | Hábitos | Agenda | Estatísticas |
 |---|---|---|---|---|
-| ![](docs/screenshots/04-meu-dia.png) | ![](docs/screenshots/05-habitos.png) | ![](docs/screenshots/06-agenda.png) | ![](docs/screenshots/07-estatisticas.png) | ![](docs/screenshots/08-hoje-escuro.png) |
+| ![](docs/screenshots/03-detalhe-prioridade.png) | ![](docs/screenshots/04-meu-dia.png) | ![](docs/screenshots/05-habitos.png) | ![](docs/screenshots/06-agenda.png) | ![](docs/screenshots/07-estatisticas.png) |
 
 Renderizadas do app real com dados de exemplo (o app começa vazio). Para regerar:
 
@@ -28,7 +28,7 @@ As imagens saem em `app/build/screenshots/`.
 
 ## Instalação no Galaxy S26
 
-1. Copie `release/TaskFlow-1.1.0.apk` para o celular (cabo USB, Google Drive, e-mail para si mesmo etc.).
+1. Copie `release/TaskFlow-1.2.0.apk` para o celular (cabo USB, Google Drive, e-mail para si mesmo etc.).
 2. Abra o arquivo no app **Meus Arquivos**. Na primeira vez, o Android pede para permitir "Instalar apps desconhecidos" para o app usado para abrir — permita.
 3. Se o **Auto Blocker** da Samsung estiver ativo (Configurações › Segurança e privacidade › Auto Blocker), desative-o temporariamente para instalar.
 4. Ao abrir o TaskFlow, permita **notificações**. Para lembretes no minuto exato, vá em *Configurações do app › Notificações › Lembretes pontuais* e ative "Alarmes e lembretes".
@@ -52,8 +52,16 @@ Toque no **microfone** (botão flutuante) e fale. O mesmo campo aceita texto dig
 | “Criar dashboard de vendas na categoria engenharia de dados” | Define a categoria |
 | “Já paguei a fatura” · “Concluí o relatório” · “Marca revisar PR como feito” | **Conclui** a tarefa certa (busca aproximada) |
 | “Fiz exercícios” · “Estudei SQL” | Marca o **hábito** como feito hoje |
+| “Apaga a tarefa estudar SQL” · “Exclui revisar PR” · “Pode remover o dentista” | **Apaga** a tarefa (pede confirmação) |
+| “Apaga a reunião de amanhã” · “Cancela a reunião com cliente” · “Tira comprar pão da lista” | A data na frase escolhe entre tarefas de mesmo nome |
+| “Apaga o hábito academia” | Apaga o hábito e o histórico dele (com confirmação e desfazer) |
 
 Depois de cada comando aparece o que foi entendido, com **Desfazer** (e **Ajustar** para abrir a tarefa). Se a frase servir para mais de uma tarefa, o app pergunta qual.
+
+**Apagar é sempre confirmado.** O reconhecimento de voz e a busca aproximada podem errar, então o app mostra a tarefa encontrada (com data ou "concluída") e só apaga depois de você tocar em **Apagar**. Mesmo depois disso dá para **Desfazer**: a tarefa volta com o mesmo histórico, no "Meu dia" se estava planejada e reconectada às tarefas que dependiam dela. Também funciona com tarefas já concluídas.
+- Infinitivo sozinho continua criando tarefa: "cancelar assinatura da Netflix" e "tirar o lixo amanhã" viram tarefas novas. Para apagar, use o imperativo ("cancela…", "apaga…") ou "a tarefa…".
+- Se não achar o que apagar, o app oferece **Criar como nova tarefa**. Isso cobre o caso de "cancela a assinatura da academia" ser uma coisa a fazer.
+- O Gemini Nano nunca decide apagar sozinho. A frase precisa ter uma palavra de apagar; o modelo só ajuda a escolher **qual** item.
 
 ### O que é possível integrar com a IA do S26 (verificado em novembro de 2026)
 
@@ -211,7 +219,8 @@ TaskFlow Voz (botão lateral, Bixby/Gemini “abrir”, widget, compartilhar) �
 3. **Produtividade** — recorrências, hábitos e sequências, agenda mês/semana, notificações (AlarmManager + WorkManager), estatísticas.
 4. **Avançado** — widget Glance, backup/restauração validados, histórico, captura rápida com linguagem natural, atalho, desfazer exclusão, acessibilidade.
 5. **Testes e distribuição** — testes automatizados, correção dos bugs encontrados, APK release com R8 e assinatura.
-6. **v1.1 — Voz e minimalismo** — comandos de voz (criar/concluir), Gemini Nano no aparelho, entradas do sistema (botão lateral, Bixby/Gemini, widget, compartilhar), interface simplificada (4 abas, linhas e cartões enxutos). Kotlin 2.3, Room 2.8, Hilt 2.58. 108 testes.
+6. **v1.1 — Voz e minimalismo** — comandos de voz (criar/concluir), Gemini Nano no aparelho, entradas do sistema (botão lateral, Bixby/Gemini, widget, compartilhar), interface simplificada (4 abas, linhas e cartões enxutos). Kotlin 2.3, Room 2.8, Hilt 2.58.
+7. **v1.2 — Apagar por voz** — tarefas e hábitos existentes (inclusive concluídos), com confirmação, escolha entre parecidos e desfazer completo (mesmo id, Meu dia e dependências). 124 testes.
 
 ---
 
@@ -255,9 +264,9 @@ keytool -genkeypair -keystore keystore/taskflow-release.jks -alias taskflow -key
 | `TaskUseCasesTest` | validação, prazo original, ciclo de dependências, lembretes, conclusão/reabertura idempotentes, recorrência, adiamento, exclusão + desfazer, duplicação, promoção de subtarefa, captura rápida |
 | `BackupValidatorTest` | formato, versão, referências, valores inválidos, duplicidades, ciclos |
 | `RoomRepositoryTest` (Robolectric) | persistência real com cascatas, categoria excluída, ordem do plano, backup ida-e-volta, importação inválida não altera dados |
-| `VoiceCommandParserTest` | intenção criar × concluir, datas/horas faladas (números por extenso, “3 e meia da tarde”, relativas), duração, prioridade, categoria, recorrência, lembrete, títulos limpos, busca aproximada e ambiguidade |
-| `VoiceInterpreterTest` | fusão regras + Gemini Nano (título inventado rejeitado, categoria inexistente ignorada, alvo inválido descartado), parsing do JSON do modelo, executar e desfazer (tarefa, recorrência, hábito) |
-| `AppSmokeTest` (Robolectric + Compose) | sobe o app real: cria e conclui tarefa por frase, desfaz, detalhe, todas as abas, hábito, telas secundárias, edição, Meu dia, adiar, excluir e desfazer |
+| `VoiceCommandParserTest` | intenção criar × concluir × apagar (inclusive "cancelar assinatura" continuar criando), datas/horas faladas (números por extenso, “3 e meia da tarde”, relativas), duração, prioridade, categoria, recorrência, lembrete, títulos limpos, busca aproximada e ambiguidade |
+| `VoiceInterpreterTest` | fusão regras + Gemini Nano (título inventado rejeitado, categoria inexistente ignorada, alvo inválido descartado, modelo nunca apaga sozinho), parsing do JSON do modelo, executar e desfazer (criar, concluir, recorrência, hábito, apagar tarefa e hábito) |
+| `AppSmokeTest` (Robolectric + Compose) | sobe o app real: cria e conclui tarefa por frase, desfaz; apaga por frase com confirmação, cancela, desfaz e "criar como nova tarefa"; detalhe, todas as abas, hábito, telas secundárias, edição, Meu dia, adiar, excluir e desfazer |
 | `VoiceEntryTest` | “Compartilhar → TaskFlow”: a frase compartilhada vira tarefa com data e hora |
 | `ScreenshotTest` | gera as capturas de tela acima (só roda com `-Pscreenshots`) |
 

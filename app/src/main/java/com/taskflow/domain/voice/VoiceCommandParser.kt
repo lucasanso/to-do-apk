@@ -18,16 +18,25 @@ import java.time.temporal.TemporalAdjusters
  *  - "me lembra de pagar a fatura amanhã às 3 da tarde" → Create("Pagar a fatura", amanhã 15:00)
  *  - "reunião com o time toda segunda às 9h30 por uma hora" → Create(weekly Mon, 09:30, 60 min)
  *  - "já paguei a fatura" / "marca relatório como feito" / "concluí o relatório" → Complete(...)
+ *  - "apaga a tarefa estudar SQL" / "exclui a reunião de amanhã" / "pode remover o dentista" → Delete(...)
  */
 object VoiceCommandParser {
 
     fun parse(text: String, now: LocalDateTime, categories: List<String> = emptyList()): VoiceIntent {
         val s = TokenStream(text)
         if (s.toks.isEmpty()) return VoiceIntent.Unknown(text)
+        detectDeletion(s, now, text)?.let { return it }
         detectCompletion(s)?.let { return it }
         s.take(CREATE_PREFIX)
         val draft = extractDraft(s, now, categories)
         return if (draft.title.isBlank()) VoiceIntent.Unknown(text) else VoiceIntent.Create(draft)
+    }
+
+    /** Reads the sentence as a new task, skipping intent detection ("cancela a assinatura" as a to-do). */
+    fun parseAsCreate(text: String, now: LocalDateTime, categories: List<String> = emptyList()): TaskDraft {
+        val s = TokenStream(text)
+        s.take(CREATE_PREFIX)
+        return extractDraft(s, now, categories)
     }
 
     /** Parses only date/time/duration expressions from a phrase (used for Gemini Nano's "when" field). */
@@ -61,6 +70,37 @@ object VoiceCommandParser {
             """(?:nova|novo)(?: $NOUN)?(?: (?:de|para|pra|que))?|""" +
             """(?:eu )?(?:preciso|tenho que|tenho de|devo|vou ter que)(?: de)?|$NOUN(?: (?:de|para|pra))?)\b"""
     )
+
+    // ---------------------------------------------------------------- delete
+
+    private const val ITEM_NOUN = """(?:a tarefa|o habito|a atividade|o lembrete|o compromisso|o evento|o item|a reuniao marcada)"""
+    private const val DEL_IMPERATIVE = """(?:apaga|apague|exclui|exclua|remove|remova|deleta|delete|cancela|cancele|elimina|elimine|descarta|descarte|esquece|esqueca|joga fora|jogue fora)"""
+    private const val DEL_INFINITIVE = """(?:apagar|excluir|remover|deletar|cancelar|eliminar|descartar|tirar)"""
+    private const val DEL_TAIL = """(?: (?:de|do|da|que|chamad[ao]))?"""
+    private val DELETE_SUFFIX = Regex("""\b(?:da (?:minha )?lista|da (?:minha )?agenda|das (?:minhas )?tarefas|dos (?:meus )?habitos|do app|do taskflow)\b""")
+
+    /** "apaga X", "exclui a tarefa X", "esquece X". Imperatives addressed to the app always mean delete. */
+    private val DELETE_IMP = Regex("""${LEAD}(?:pode )?$DEL_IMPERATIVE\b(?: $ITEM_NOUN)?$DEL_TAIL""")
+    /** "pode apagar X", "quero excluir X". */
+    private val DELETE_MODAL = Regex("""${LEAD}(?:eu )?(?:pode|quero|queria|tem como|da para|da pra|consegue)(?: me)? $DEL_INFINITIVE\b(?: $ITEM_NOUN)?$DEL_TAIL""")
+    /** "apagar a tarefa X". A bare infinitive ("cancelar assinatura") is a new task, not a delete. */
+    private val DELETE_INF_NOUN = Regex("""${LEAD}$DEL_INFINITIVE $ITEM_NOUN\b$DEL_TAIL""")
+    /** "tira X da lista": "tira" alone is too ambiguous ("tirar o lixo"), so the list must be named. */
+    private val DELETE_TIRA = Regex("""${LEAD}(?:pode )?(?:tira|tire)\b(?: $ITEM_NOUN)?$DEL_TAIL(?=.*$DELETE_SUFFIX)""")
+
+    private fun detectDeletion(s: TokenStream, now: LocalDateTime, text: String): VoiceIntent? {
+        val joined = s.joined
+        val r = listOf(DELETE_TIRA, DELETE_INF_NOUN, DELETE_MODAL, DELETE_IMP).firstOrNull { it.containsMatchIn(joined) } ?: return null
+        s.take(r)
+        s.take(DELETE_SUFFIX)
+        s.takeAll(Regex("""\b(?:por favor|pra mim|para mim|agora)\b"""))
+        // Dates in the sentence narrow the search ("a reunião de amanhã"); they are not part of the name.
+        val d = extractDraft(s, now, emptyList())
+        val date = d.dueDate.takeIf { d.recurrence == null }
+        return if (d.title.isBlank() && date == null) VoiceIntent.Unknown(text) else VoiceIntent.Delete(d.title, date)
+    }
+
+    // ---------------------------------------------------------------- complete
 
     private fun detectCompletion(s: TokenStream): VoiceIntent.Complete? {
         val joined = s.joined

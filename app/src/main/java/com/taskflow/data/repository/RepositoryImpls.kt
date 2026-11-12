@@ -41,7 +41,12 @@ class TaskRepositoryImpl @Inject constructor(private val db: TaskFlowDatabase) :
 
     override suspend fun upsert(task: Task): Long = db.withTransaction {
         val entity = task.toEntity()
-        val id = if (task.id == 0L) dao.insert(entity.copy(id = 0)) else { dao.update(entity); task.id }
+        // A non-zero id that no longer exists (undo of a deletion) is re-inserted with that same id.
+        val id = when {
+            task.id == 0L -> dao.insert(entity.copy(id = 0))
+            dao.get(task.id) == null -> dao.insert(entity)
+            else -> { dao.update(entity); task.id }
+        }
 
         // Subtasks: keep ids of existing rows, insert new ones, delete removed.
         val existingIds = dao.subtasksOf(id).map { it.id }.toSet()
@@ -111,8 +116,11 @@ class HabitRepositoryImpl @Inject constructor(db: TaskFlowDatabase) : HabitRepos
     }
     override suspend fun get(id: Long): Habit? = dao.get(id)?.toDomain()
     override suspend fun getAll(): List<Habit> = dao.getAll().map { it.toDomain() }
-    override suspend fun upsert(habit: Habit): Long =
-        if (habit.id == 0L) dao.insert(habit.toEntity()) else { dao.update(habit.toEntity()); habit.id }
+    override suspend fun upsert(habit: Habit): Long = when {
+        habit.id == 0L -> dao.insert(habit.toEntity())
+        dao.get(habit.id) == null -> dao.insert(habit.toEntity()) // restoring a deleted habit keeps its id
+        else -> { dao.update(habit.toEntity()); habit.id }
+    }
     override suspend fun delete(id: Long) = dao.delete(id)
     override suspend fun setDone(habitId: Long, date: LocalDate, done: Boolean) {
         val log = HabitLogEntity(habitId, date.toEpochDay())
@@ -128,6 +136,7 @@ class PlanRepositoryImpl @Inject constructor(private val db: TaskFlowDatabase) :
     override fun observeDay(date: LocalDate): Flow<List<DayPlanItem>> =
         dao.observeDay(date.toEpochDay()).map { l -> l.map { DayPlanItem(date, it.taskId, it.position) } }
     override fun observeAvailableMinutes(date: LocalDate): Flow<Int?> = dao.observeAvailable(date.toEpochDay())
+    override suspend fun daysFor(taskId: Long): List<LocalDate> = dao.datesFor(taskId).map(LocalDate::ofEpochDay)
     override suspend fun add(date: LocalDate, taskId: Long) = db.withTransaction {
         dao.insert(DayPlanEntity(date.toEpochDay(), taskId, dao.maxPosition(date.toEpochDay()) + 1))
     }

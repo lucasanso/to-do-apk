@@ -16,6 +16,7 @@ import com.taskflow.domain.repository.PlanRepository
 import com.taskflow.domain.repository.TaskRepository
 import com.taskflow.domain.usecase.ArchiveTaskUseCase
 import com.taskflow.domain.usecase.DeleteTaskUseCase
+import com.taskflow.domain.usecase.DeletedTask
 import com.taskflow.domain.usecase.DuplicateTaskUseCase
 import com.taskflow.domain.usecase.PostponeTaskUseCase
 import com.taskflow.domain.usecase.PromoteSubtaskUseCase
@@ -111,6 +112,6 @@ class TaskDetailViewModel @Inject constructor(
     }
     // Deleting closes this screen (the task disappears), which clears this ViewModel.
     // Delete and undo therefore run in the app scope so the undo snackbar and restore always complete.
-    fun delete(onDeleted: (Task?) -> Unit) = appScope.launch { onDeleted((delete.invoke(id) as? AppResult.Success)?.value) }
-    fun restore(t: Task) = appScope.launch { restore.invoke(t) }
+    fun delete(onDeleted: (DeletedTask?) -> Unit) = appScope.launch { onDeleted((delete.invoke(id) as? AppResult.Success)?.value) }
+    fun restore(t: DeletedTask) = appScope.launch { restore.invoke(t) }
 }

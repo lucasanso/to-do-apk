@@ -131,15 +131,25 @@ class TaskUseCasesTest {
         assertEquals(TODAY.plusDays(1), PostponeTaskUseCase(support)(id).ok())
     }
 
-    @Test fun `delete removes task and dependency edges and can be undone`() = runTest {
+    @Test fun `delete removes task and dependency edges and undo restores id, dependents and plan`() = runTest {
+        val plan = com.taskflow.FakePlan()
         val a = save(task(0, "A")).ok()
         val b = save(task(0, "B", dependsOn = listOf(a))).ok()
-        val deleted = DeleteTaskUseCase(support)(a).ok()
+        plan.add(TODAY, a)
+        val deleted = DeleteTaskUseCase(support, plan)(a).ok()
+        plan.cascade(a)
         assertNull(repo.get(a))
         assertTrue(repo.get(b)!!.dependsOn.isEmpty())
-        val restored = RestoreDeletedTaskUseCase(support)(deleted).ok()
-        assertEquals("A", repo.get(restored)!!.title)
+        assertEquals(listOf(b), deleted.dependents)
+        assertEquals(listOf(TODAY), deleted.plannedOn)
+
+        val restored = RestoreDeletedTaskUseCase(support, plan)(deleted).ok()
+        assertEquals(a, restored)                       // same id: history stays linked
+        assertEquals("A", repo.get(a)!!.title)
+        assertEquals(listOf(a), repo.get(b)!!.dependsOn) // dependent reconnected
+        assertEquals(listOf(TODAY), plan.daysFor(a))     // back in "Meu dia"
         assertTrue(history.entries.any { it.type == HistoryType.DELETED && it.taskTitle == "A" })
+        assertTrue(history.entries.any { it.type == HistoryType.RESTORED && it.taskId == a })
     }
 
     @Test fun `duplicate resets progress`() = runTest {

@@ -13,6 +13,12 @@ sealed interface VoiceIntent {
     /** Mark an existing task or habit as done; [query] is the part of the sentence that names it. */
     data class Complete(val query: String) : VoiceIntent
 
+    /**
+     * Delete an existing task or habit. [query] names it; [date] narrows it down when the
+     * sentence mentions one ("apaga a reunião de amanhã").
+     */
+    data class Delete(val query: String, val date: LocalDate? = null) : VoiceIntent
+
     data class Unknown(val text: String) : VoiceIntent
 }
 
@@ -29,13 +35,16 @@ data class TaskDraft(
     val reminderMinutesBefore: Int? = null,
 )
 
-/** Something that can be completed by voice. */
+/** An existing task or habit that a voice command can refer to (to complete or delete it). */
 data class CompletionCandidate(
     val id: Long,
     val kind: Kind,
     val title: String,
     /** Due today/overdue (tasks) or scheduled today (habits): small tie-break boost. */
     val relevantToday: Boolean = false,
+    /** False for done/archived tasks: they can be deleted, not completed. */
+    val open: Boolean = true,
+    val dueDate: LocalDate? = null,
 ) {
     enum class Kind { TASK, HABIT }
 }

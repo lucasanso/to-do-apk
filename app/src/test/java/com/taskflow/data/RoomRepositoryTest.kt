@@ -118,4 +118,32 @@ class RoomRepositoryTest {
         assertTrue(manager.importJson("""{"format":"taskflow-backup","schemaVersion":1,"exportedAt":0,"tasks":[{"id":1,"title":"","createdAt":0,"updatedAt":0}]}""") is AppResult.Failure)
         assertEquals("Keep", tasks.get(id)!!.title)
     }
+
+    @Test fun `re-inserting a deleted task keeps its id, tags and subtasks`() = runTest {
+        val id = tasks.upsert(task(0, "Dentista", due = TODAY).copy(tags = listOf("saude"), subtasks = listOf(Subtask(title = "levar exames"))))
+        tasks.upsert(task(0, "Outra"))
+        val snapshot = tasks.get(id)!!
+        plan.add(TODAY, id)
+        tasks.delete(id)
+        assertNull(tasks.get(id))
+        assertTrue(plan.daysFor(id).isEmpty())
+
+        val restored = tasks.upsert(snapshot.copy(subtasks = snapshot.subtasks.map { it.copy(id = 0, taskId = 0) }))
+        assertEquals(id, restored)
+        val t = tasks.get(id)!!
+        assertEquals(listOf("saude"), t.tags)
+        assertEquals(listOf("levar exames"), t.subtasks.map { it.title })
+        plan.add(TODAY, id)
+        assertEquals(listOf(TODAY), plan.daysFor(id))
+    }
+
+    @Test fun `re-inserting a deleted habit keeps its id`() = runTest {
+        val h = habits.upsert(Habit(title = "Ler", rule = RecurrenceRule(RecurrenceType.DAILY), createdAt = NOW.toInstant(ZoneOffset.UTC), startDate = TODAY))
+        val snapshot = habits.get(h)!!
+        habits.delete(h)
+        assertNull(habits.get(h))
+        assertEquals(h, habits.upsert(snapshot))
+        habits.setDone(h, TODAY, true)
+        assertEquals(setOf(TODAY), habits.logsFor(h))
+    }
 }

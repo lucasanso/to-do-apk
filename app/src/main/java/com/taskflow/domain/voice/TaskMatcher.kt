@@ -1,5 +1,6 @@
 package com.taskflow.domain.voice
 
+import java.time.LocalDate
 import kotlin.math.max
 import kotlin.math.min
 
@@ -42,13 +43,31 @@ object TaskMatcher {
         return 0.65 * queryFound + 0.35 * titleCovered
     }
 
-    fun rank(query: String, candidates: List<CompletionCandidate>): List<ScoredCandidate> =
-        candidates.map { c -> ScoredCandidate(c, score(query, c.title) + if (c.relevantToday) 0.04 else 0.0) }
+    /**
+     * [date], when the sentence named one, favors items due that day. Open items get a small edge
+     * over done/archived ones, and items due today over the rest.
+     */
+    fun rank(query: String, candidates: List<CompletionCandidate>, date: LocalDate? = null): List<ScoredCandidate> =
+        candidates.map { c ->
+            val base = score(query, c.title)
+            val bonus = (if (c.relevantToday) 0.04 else 0.0) + (if (!c.open) -0.05 else 0.0) +
+                (if (date != null && c.dueDate == date) 0.2 else 0.0)
+            ScoredCandidate(c, if (base > 0.0) base + bonus else 0.0)
+        }
             .filter { it.score > 0.0 }
             .sortedByDescending { it.score }
 
-    fun match(query: String, candidates: List<CompletionCandidate>): TaskMatch {
-        val ranked = rank(query, candidates)
+    fun match(query: String, candidates: List<CompletionCandidate>, date: LocalDate? = null): TaskMatch {
+        // Only a date ("apaga a tarefa de amanhã"): whatever is due that day.
+        if (tokens(query).isEmpty() && date != null) {
+            val onDate = candidates.filter { it.dueDate == date }.sortedByDescending { it.open }
+            return when (onDate.size) {
+                0 -> TaskMatch.NotFound
+                1 -> TaskMatch.Unique(ScoredCandidate(onDate.first(), 1.0))
+                else -> TaskMatch.Ambiguous(onDate.take(5).map { ScoredCandidate(it, 1.0) })
+            }
+        }
+        val ranked = rank(query, candidates, date)
         val best = ranked.firstOrNull() ?: return TaskMatch.NotFound
         val second = ranked.getOrNull(1)
         return when {

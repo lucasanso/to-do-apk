@@ -14,6 +14,7 @@ import com.taskflow.domain.model.Task
 import com.taskflow.domain.model.TaskStatus
 import com.taskflow.domain.repository.CategoryRepository
 import com.taskflow.domain.repository.HistoryRepository
+import com.taskflow.domain.repository.PlanRepository
 import com.taskflow.domain.repository.ReminderScheduler
 import com.taskflow.domain.repository.TaskRepository
 import com.taskflow.domain.engine.TaskFilters
@@ -196,24 +197,42 @@ class ArchiveTaskUseCase @Inject constructor(private val s: TaskMutationSupport)
     }
 }
 
-class DeleteTaskUseCase @Inject constructor(private val s: TaskMutationSupport) {
+/** Everything needed to undo a deletion faithfully. */
+data class DeletedTask(
+    val task: Task,
+    /** Tasks that depended on the deleted one (their dependency edges cascade away with it). */
+    val dependents: List<Long> = emptyList(),
+    /** Days of "Meu dia" the task was planned on. */
+    val plannedOn: List<LocalDate> = emptyList(),
+)
+
+class DeleteTaskUseCase @Inject constructor(private val s: TaskMutationSupport, private val plan: PlanRepository) {
     /** Deletes the task. Subtasks, tags links, plan entries and dependency edges cascade in the DB. */
-    suspend operator fun invoke(id: Long): AppResult<Task> = appRunCatching {
+    suspend operator fun invoke(id: Long): AppResult<DeletedTask> = appRunCatching {
         val t = s.require(id)
+        val snapshot = DeletedTask(t, s.tasks.getAll().filter { id in it.dependsOn }.map { it.id }, plan.daysFor(id))
         s.syncReminder(t.copy(status = TaskStatus.ARCHIVED))
         s.tasks.delete(id)
         s.log(t, HistoryType.DELETED)
-        t
+        snapshot
     }
 }
 
-class RestoreDeletedTaskUseCase @Inject constructor(private val s: TaskMutationSupport) {
-    /** Undo for deletion: re-inserts the snapshot (new id, dependencies kept only if they still exist). */
-    suspend operator fun invoke(snapshot: Task): AppResult<Long> = appRunCatching {
-        val existing = s.tasks.getAll().map { it.id }.toSet()
-        val t = snapshot.copy(id = 0, dependsOn = snapshot.dependsOn.filter { it in existing },
+class RestoreDeletedTaskUseCase @Inject constructor(private val s: TaskMutationSupport, private val plan: PlanRepository) {
+    /**
+     * Undo for deletion: re-inserts the task with its original id when it is free (so history stays
+     * linked), then reconnects dependents and "Meu dia" entries. Links to tasks that no longer exist are dropped.
+     */
+    suspend operator fun invoke(deleted: DeletedTask): AppResult<Long> = appRunCatching {
+        val snapshot = deleted.task
+        val existing = s.tasks.getAll().associateBy { it.id }
+        val t = snapshot.copy(id = if (snapshot.id in existing) 0 else snapshot.id, dependsOn = snapshot.dependsOn.filter { it in existing },
             subtasks = snapshot.subtasks.map { it.copy(id = 0, taskId = 0) })
         val id = s.tasks.upsert(t)
+        deleted.dependents.mapNotNull(existing::get).forEach { dep ->
+            if (id !in dep.dependsOn) s.tasks.upsert(dep.copy(dependsOn = dep.dependsOn + id))
+        }
+        deleted.plannedOn.forEach { plan.add(it, id) }
         s.log(t.copy(id = id), HistoryType.RESTORED)
         s.syncReminder(t.copy(id = id))
         id

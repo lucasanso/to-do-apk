@@ -43,6 +43,7 @@ interface PlanRepository {
     fun observeAll(): Flow<List<DayPlanItem>>
     fun observeDay(date: LocalDate): Flow<List<DayPlanItem>>
     fun observeAvailableMinutes(date: LocalDate): Flow<Int?>
+    suspend fun daysFor(taskId: Long): List<LocalDate>
     suspend fun add(date: LocalDate, taskId: Long)
     suspend fun remove(date: LocalDate, taskId: Long)
     suspend fun reorder(date: LocalDate, orderedTaskIds: List<Long>)

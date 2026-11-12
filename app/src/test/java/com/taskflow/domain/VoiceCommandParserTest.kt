@@ -248,4 +248,56 @@ class VoiceCommandParserTest {
         assertEquals(setOf(6L, 7L), (m as TaskMatch.Ambiguous).options.map { it.candidate.id }.toSet())
         assertTrue(TaskMatcher.match("comprei passagem de avião", candidates) is TaskMatch.NotFound)
     }
+
+    // ---------- delete
+
+    private fun delete(text: String): VoiceIntent.Delete {
+        val r = VoiceCommandParser.parse(text, NOW, cats)
+        assertTrue("expected Delete for '$text' but was $r", r is VoiceIntent.Delete)
+        return r as VoiceIntent.Delete
+    }
+
+    @Test fun `deletion phrases`() {
+        assertEquals("Estudar SQL", delete("apaga a tarefa estudar SQL").query)
+        assertEquals("Revisar PR", delete("exclui revisar PR").query)
+        assertEquals("Dentista", delete("pode remover o dentista").query)
+        assertEquals("Pagar fatura", delete("quero apagar a tarefa pagar fatura").query)
+        assertEquals("Reunião com cliente", delete("cancela a reunião com cliente").query)
+        assertEquals("Comprar pão", delete("tira comprar pão da lista").query)
+        assertEquals("Ler artigo", delete("esquece ler artigo").query)
+        assertEquals("Academia", delete("deleta o hábito academia").query)
+        assertEquals("Lista de cálculo", delete("apagar a tarefa lista de cálculo").query)
+    }
+
+    @Test fun `deletion date narrows the search and leaves the name clean`() {
+        val d = delete("apaga a reunião de amanhã")
+        assertEquals("Reunião", d.query)
+        assertEquals(TODAY.plusDays(1), d.date)
+        val onlyDate = delete("apaga a tarefa de sexta")
+        assertEquals("", onlyDate.query)
+        assertEquals(LocalDate.of(2026, 11, 13), onlyDate.date)
+    }
+
+    @Test fun `bare infinitives and ambiguous verbs stay creations`() {
+        assertEquals("Cancelar assinatura da Netflix", create("cancelar assinatura da Netflix").title)
+        assertEquals("Tirar o lixo", create("tirar o lixo amanhã").title)
+        assertEquals("Remover manchas do sofá", create("remover manchas do sofá").title)
+    }
+
+    @Test fun `delete without a target is unknown`() {
+        assertTrue(VoiceCommandParser.parse("apaga", NOW) is VoiceIntent.Unknown)
+    }
+
+    @Test fun `matcher only-date query and done tasks`() {
+        val items = listOf(
+            CompletionCandidate(1, Kind.TASK, "Prova de cálculo", dueDate = LocalDate.of(2026, 11, 13)),
+            CompletionCandidate(2, Kind.TASK, "Pagar luz", dueDate = TODAY),
+            CompletionCandidate(3, Kind.TASK, "Prova de física", open = false),
+        )
+        assertEquals(1L, (TaskMatcher.match("", items, LocalDate.of(2026, 11, 13)) as TaskMatch.Unique).match.candidate.id)
+        assertTrue(TaskMatcher.match("", items, TODAY.plusDays(20)) is TaskMatch.NotFound)
+        // Open items edge out done ones with the same score.
+        val ranked = TaskMatcher.rank("prova", items)
+        assertEquals(1L, ranked.first().candidate.id)
+    }
 }

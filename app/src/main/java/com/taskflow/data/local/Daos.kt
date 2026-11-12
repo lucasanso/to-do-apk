@@ -76,6 +76,7 @@ interface PlanDao {
     @Query("SELECT * FROM day_plan ORDER BY date, position") suspend fun getAll(): List<DayPlanEntity>
     @Query("SELECT * FROM day_plan WHERE date = :date ORDER BY position") fun observeDay(date: Long): Flow<List<DayPlanEntity>>
     @Query("SELECT COALESCE(MAX(position), -1) FROM day_plan WHERE date = :date") suspend fun maxPosition(date: Long): Int
+    @Query("SELECT date FROM day_plan WHERE taskId = :taskId") suspend fun datesFor(taskId: Long): List<Long>
     @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun insert(e: DayPlanEntity)
     @Query("DELETE FROM day_plan WHERE date = :date AND taskId = :taskId") suspend fun delete(date: Long, taskId: Long)
     @Query("UPDATE day_plan SET position = :position WHERE date = :date AND taskId = :taskId") suspend fun setPosition(date: Long, taskId: Long, position: Int)

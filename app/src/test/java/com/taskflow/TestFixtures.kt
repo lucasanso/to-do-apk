@@ -72,3 +72,19 @@ class FakeCategories(private val list: List<Category>) : CategoryRepository {
 }
 
 fun plan(date: LocalDate, vararg ids: Long) = ids.mapIndexed { i, id -> DayPlanItem(date, id, i) }
+
+class FakePlan : com.taskflow.domain.repository.PlanRepository {
+    val items = MutableStateFlow<List<DayPlanItem>>(emptyList())
+    override fun observeAll(): Flow<List<DayPlanItem>> = items
+    override fun observeDay(date: LocalDate): Flow<List<DayPlanItem>> = items.map { l -> l.filter { it.date == date } }
+    override fun observeAvailableMinutes(date: LocalDate): Flow<Int?> = MutableStateFlow(null)
+    override suspend fun daysFor(taskId: Long) = items.value.filter { it.taskId == taskId }.map { it.date }
+    override suspend fun add(date: LocalDate, taskId: Long) {
+        if (items.value.none { it.date == date && it.taskId == taskId }) items.value = items.value + DayPlanItem(date, taskId, items.value.size)
+    }
+    override suspend fun remove(date: LocalDate, taskId: Long) { items.value = items.value.filterNot { it.date == date && it.taskId == taskId } }
+    override suspend fun reorder(date: LocalDate, orderedTaskIds: List<Long>) {}
+    override suspend fun setAvailableMinutes(date: LocalDate, minutes: Int) {}
+    /** Mirrors the DB cascade when a task is deleted. */
+    fun cascade(taskId: Long) { items.value = items.value.filterNot { it.taskId == taskId } }
+}

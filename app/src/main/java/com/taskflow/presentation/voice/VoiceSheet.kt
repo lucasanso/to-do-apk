@@ -32,6 +32,11 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
+import com.taskflow.presentation.util.formatDue
 import androidx.compose.material.icons.outlined.Keyboard
 import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.Stop
@@ -157,8 +162,9 @@ fun VoiceCaptureSheet(
                         is VoiceUi.Listening -> Listening(state) { speech.finish() }
                         is VoiceUi.Thinking -> Thinking(state.text)
                         is VoiceUi.Done -> Result(state, vm, onOpenTask)
-                        is VoiceUi.Choose -> Choose(state) { vm.choose(state.text, it) }
-                        is VoiceUi.Message -> Message(state)
+                        is VoiceUi.Choose -> Choose(state, vm.time.today()) { vm.choose(state.text, it, state.action) }
+                        is VoiceUi.ConfirmDelete -> ConfirmDelete(state, vm.time.today(), onConfirm = vm::confirmDelete, onCancel = vm::idle)
+                        is VoiceUi.Message -> Message(state) { vm.createInstead(it) }
                     }
                 }
             }
@@ -197,7 +203,7 @@ fun VoiceCaptureSheet(
 private fun Hint(typing: Boolean) {
     Text(if (typing) "Digite o que precisa fazer" else "Toque no microfone e fale", style = MaterialTheme.typography.titleMedium)
     Spacer(Modifier.height(8.dp))
-    Text("“Reunião amanhã às 15h por uma hora”\n“Já paguei a fatura”", style = MaterialTheme.typography.bodyMedium,
+    Text("“Reunião amanhã às 15h por uma hora”\n“Já paguei a fatura” · “Apaga a tarefa X”", style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
 }
 
@@ -235,16 +241,20 @@ private fun Result(state: VoiceUi.Done, vm: VoiceViewModel, onOpenTask: (Long) -
             o.candidate.title, if (o.nextOccurrenceId != null) "Próxima ocorrência criada" else "",
             if (o.candidate.kind == CompletionCandidate.Kind.TASK) o.candidate.id else null)
         is VoiceOutcome.AlreadyDone -> Quad("Já estava concluída", o.candidate.title, "", null)
+        is VoiceOutcome.Deleted -> Quad(if (o.candidate.kind == CompletionCandidate.Kind.HABIT) "Hábito apagado" else "Tarefa apagada",
+            o.candidate.title, "", null)
         is VoiceOutcome.Failed -> Quad("Não deu certo", o.message, "", null)
     }
-    Icon(Icons.Outlined.CheckCircle, null, tint = if (state.undone) MaterialTheme.colorScheme.onSurfaceVariant else TaskFlowColors.success, modifier = Modifier.size(40.dp))
+    Icon(if (o is VoiceOutcome.Deleted) Icons.Outlined.DeleteOutline else Icons.Outlined.CheckCircle, null,
+        tint = if (state.undone) MaterialTheme.colorScheme.onSurfaceVariant else if (o is VoiceOutcome.Deleted) MaterialTheme.colorScheme.error else TaskFlowColors.success,
+        modifier = Modifier.size(40.dp))
     Spacer(Modifier.height(8.dp))
     Text(if (state.undone) "Desfeito" else headline, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
     Text(title, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 2.dp))
     if (detail.isNotEmpty()) Text(detail, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center, modifier = Modifier.padding(top = 4.dp))
-    if (!state.undone && (o is VoiceOutcome.Created || o is VoiceOutcome.Completed)) Row(Modifier.padding(top = 8.dp)) {
+    if (!state.undone && (o is VoiceOutcome.Created || o is VoiceOutcome.Completed || o is VoiceOutcome.Deleted)) Row(Modifier.padding(top = 8.dp)) {
         TextButton(onClick = vm::undo) { Text("Desfazer") }
         if (taskId != null && o is VoiceOutcome.Created) TextButton(onClick = { onOpenTask(taskId) }) { Text("Ajustar") }
     }
@@ -252,23 +262,54 @@ private fun Result(state: VoiceUi.Done, vm: VoiceViewModel, onOpenTask: (Long) -
 
 private data class Quad(val a: String, val b: String, val c: String, val d: Long?)
 
+/** Due date or status, to tell similar items apart ("Reunião" today vs. "Reunião" next week). */
+private fun detailOf(c: CompletionCandidate, today: java.time.LocalDate): String = listOfNotNull(
+    if (c.kind == CompletionCandidate.Kind.HABIT) "hábito" else null,
+    formatDue(c.dueDate, null, today),
+    if (!c.open) (if (c.kind == CompletionCandidate.Kind.HABIT) "pausado" else "concluída") else null,
+).joinToString(" · ")
+
 @Composable
-private fun Choose(state: VoiceUi.Choose, onPick: (CompletionCandidate) -> Unit) {
-    Text("Qual delas você concluiu?", style = MaterialTheme.typography.titleMedium)
+private fun Choose(state: VoiceUi.Choose, today: java.time.LocalDate, onPick: (CompletionCandidate) -> Unit) {
+    Text(if (state.action == VoiceUi.Action.DELETE) "Qual delas você quer apagar?" else "Qual delas você concluiu?",
+        style = MaterialTheme.typography.titleMedium)
     Spacer(Modifier.height(8.dp))
     state.options.forEach { c ->
         Row(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).clickable { onPick(c) }.padding(vertical = 14.dp, horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically) {
             Text(c.title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-            if (c.kind == CompletionCandidate.Kind.HABIT) Text("hábito", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(detailOf(c, today), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
 
 @Composable
-private fun Message(state: VoiceUi.Message) {
+private fun ConfirmDelete(state: VoiceUi.ConfirmDelete, today: java.time.LocalDate, onConfirm: () -> Unit, onCancel: () -> Unit) {
+    val c = state.candidate
+    val habit = c.kind == CompletionCandidate.Kind.HABIT
+    Icon(Icons.Outlined.DeleteOutline, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(40.dp))
+    Spacer(Modifier.height(8.dp))
+    Text(if (habit) "Apagar este hábito?" else "Apagar esta tarefa?", style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
+    Text(c.title, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 2.dp))
+    val detail = detailOf(c, today)
+    if (detail.isNotEmpty()) Text(detail, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    if (habit) Text("O histórico de dias feitos também será apagado.", style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 4.dp))
+    Row(Modifier.padding(top = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        OutlinedButton(onClick = onCancel) { Text("Cancelar") }
+        Button(onClick = onConfirm, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error,
+            contentColor = MaterialTheme.colorScheme.onError)) { Text("Apagar") }
+    }
+}
+
+@Composable
+private fun Message(state: VoiceUi.Message, onCreate: (String) -> Unit) {
     state.text?.let { Text("“$it”", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center) }
     Spacer(Modifier.height(8.dp))
     Text(state.message, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center,
         modifier = Modifier.width(320.dp).semantics { liveRegion = LiveRegionMode.Polite })
+    if (state.offerCreate && state.text != null) TextButton(onClick = { onCreate(state.text) }, modifier = Modifier.padding(top = 4.dp)) {
+        Text("Criar como nova tarefa")
+    }
 }

@@ -128,14 +128,17 @@ class VoiceInterpreterTest {
     // ---------- execution and undo
 
     private class FakeHabits(list: List<Habit>) : HabitRepository {
-        val habits = list.associateBy { it.id }
+        val habits = list.associateBy { it.id }.toMutableMap()
         val logs = MutableStateFlow<Map<Long, Set<LocalDate>>>(emptyMap())
         override fun observeAll(): Flow<List<Habit>> = MutableStateFlow(habits.values.toList())
         override fun observeLogs(): Flow<Map<Long, Set<LocalDate>>> = logs
         override suspend fun get(id: Long) = habits[id]
         override suspend fun getAll() = habits.values.toList()
-        override suspend fun upsert(habit: Habit) = habit.id
-        override suspend fun delete(id: Long) {}
+        override suspend fun upsert(habit: Habit): Long {
+            val id = if (habit.id == 0L) (habits.keys.maxOrNull() ?: 0) + 1 else habit.id
+            habits[id] = habit.copy(id = id); return id
+        }
+        override suspend fun delete(id: Long) { habits.remove(id); logs.value = logs.value - id }
         override suspend fun setDone(habitId: Long, date: LocalDate, done: Boolean) {
             val cur = logs.value[habitId].orEmpty()
             logs.value = logs.value + (habitId to if (done) cur + date else cur - date)
@@ -148,7 +151,11 @@ class VoiceInterpreterTest {
     private val support = TaskMutationSupport(repo, FakeHistory(), FakeReminders(), time)
     private val habits = FakeHabits(listOf(Habit(3, "Exercícios", rule = RecurrenceRule(RecurrenceType.DAILY),
         createdAt = NOW.toInstant(ZoneOffset.UTC), startDate = TODAY.minusDays(5))))
-    private val exec = ExecuteVoiceCommandUseCase(SaveTaskUseCase(support), SetTaskDoneUseCase(support), DeleteTaskUseCase(support),
+    private val plan = com.taskflow.FakePlan()
+    private val reminders = FakeReminders()
+    private val exec = ExecuteVoiceCommandUseCase(SaveTaskUseCase(support), SetTaskDoneUseCase(support), DeleteTaskUseCase(support, plan),
+        com.taskflow.domain.usecase.RestoreDeletedTaskUseCase(support, plan),
+        com.taskflow.domain.usecase.SaveHabitUseCase(habits, reminders, time), com.taskflow.domain.usecase.DeleteHabitUseCase(habits, reminders),
         repo, habits, FakeCategories(listOf(Category(9, "Finanças", 0, "money"))), time)
 
     @Test fun `create applies the draft and undo removes it`() = runTest {
@@ -180,5 +187,82 @@ class VoiceInterpreterTest {
         assertTrue(exec.complete(c) is VoiceOutcome.AlreadyDone)
         exec.undo(o)
         assertFalse(TODAY in habits.logsFor(3))
+    }
+
+    // ---------- delete
+
+    private val withClosed = items + listOf(
+        CompletionCandidate(10, Kind.TASK, "Reunião com o time", dueDate = TODAY.plusDays(1)),
+        CompletionCandidate(11, Kind.TASK, "Reunião com o time", dueDate = TODAY.plusDays(8)),
+        CompletionCandidate(12, Kind.TASK, "Estudar SQL", open = false),
+    )
+
+    private fun interpretDel(text: String, model: ModelReading? = null) = VoiceInterpreter.interpret(text, NOW, cats, withClosed, model)
+
+    @Test fun `delete finds the item, including done tasks`() {
+        val r = interpretDel("apaga a tarefa estudar SQL")
+        r as Interpretation.Delete
+        assertEquals(12L, (r.match as TaskMatch.Unique).match.candidate.id)
+    }
+
+    @Test fun `the date in the sentence picks between same-named tasks`() {
+        val r = interpretDel("exclui a reunião com o time de amanhã")
+        r as Interpretation.Delete
+        assertEquals(10L, (r.match as TaskMatch.Unique).match.candidate.id)
+        // Without a date both meetings are equally good: the app must ask.
+        val a = interpretDel("apaga a reunião com o time") as Interpretation.Delete
+        assertTrue(a.match is TaskMatch.Ambiguous)
+    }
+
+    @Test fun `the model alone can never delete`() {
+        // No delete wording in the sentence: a model "delete" is ignored.
+        val r = interpretDel("pagar fatura do cartão", ModelReading("delete", target = 1))
+        assertFalse(r is Interpretation.Delete)
+    }
+
+    @Test fun `model helps pick which item to delete when the wording is explicit`() {
+        val r = interpretDel("apaga aquela do cartão", ModelReading("delete", target = 1))
+        r as Interpretation.Delete
+        assertEquals(1L, (r.match as TaskMatch.Unique).match.candidate.id)
+        assertEquals(InterpretationSource.ON_DEVICE_AI, r.source)
+        // An unrelated pick from the model is rejected.
+        val bad = interpretDel("apaga a fatura do cartão", ModelReading("delete", target = 3)) as Interpretation.Delete
+        assertEquals(1L, (bad.match as TaskMatch.Unique).match.candidate.id)
+        assertEquals(InterpretationSource.RULES, bad.source)
+    }
+
+    @Test fun `completion ignores done tasks`() {
+        val r = interpretDel("estudei SQL") as Interpretation.Complete
+        // "Estudar SQL" exists only as a done task (12): completing must never pick it.
+        val m = r.match
+        assertTrue(m !is TaskMatch.Unique || m.match.candidate.id != 12L)
+    }
+
+    @Test fun `delete task through the executor and undo it`() = runTest {
+        val id = repo.upsert(task(0, "Dentista", due = TODAY))
+        plan.add(TODAY, id)
+        val o = exec.deleteItem(CompletionCandidate(id, Kind.TASK, "Dentista"))
+        o as VoiceOutcome.Deleted
+        plan.cascade(id)
+        assertNull(repo.get(id))
+        exec.undo(o)
+        assertEquals("Dentista", repo.get(id)!!.title)
+        assertEquals(listOf(TODAY), plan.daysFor(id))
+    }
+
+    @Test fun `delete habit and undo restores its history`() = runTest {
+        habits.setDone(3, TODAY, true); habits.setDone(3, TODAY.minusDays(1), true)
+        val o = exec.deleteItem(CompletionCandidate(3, Kind.HABIT, "Exercícios"))
+        o as VoiceOutcome.Deleted
+        assertNull(habits.get(3))
+        exec.undo(o)
+        assertNotNull(habits.get(3))
+        assertEquals(setOf(TODAY, TODAY.minusDays(1)), habits.logsFor(3))
+    }
+
+    @Test fun `create instead reads the sentence as a new task`() {
+        val d = com.taskflow.domain.voice.VoiceCommandParser.parseAsCreate("cancela a assinatura da academia amanhã", NOW)
+        assertEquals("Cancela a assinatura da academia", d.title)
+        assertEquals(TODAY.plusDays(1), d.dueDate)
     }
 }

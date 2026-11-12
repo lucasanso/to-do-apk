@@ -13,6 +13,7 @@ import com.taskflow.domain.model.Task
 import com.taskflow.domain.repository.CategoryRepository
 import com.taskflow.domain.repository.TaskRepository
 import com.taskflow.domain.usecase.DeleteTaskUseCase
+import com.taskflow.domain.usecase.DeletedTask
 import com.taskflow.domain.usecase.PostponeTaskUseCase
 import com.taskflow.domain.usecase.RestoreDeletedTaskUseCase
 import com.taskflow.domain.usecase.SetTaskDoneUseCase
@@ -100,8 +101,8 @@ class TasksViewModel @Inject constructor(
             is AppResult.Failure -> onDone(r.error.message)
         }
     }
-    fun delete(id: Long, onDeleted: (Task?) -> Unit) = viewModelScope.launch {
+    fun delete(id: Long, onDeleted: (DeletedTask?) -> Unit) = viewModelScope.launch {
         onDeleted((delete(id) as? AppResult.Success)?.value)
     }
-    fun restore(t: Task) = viewModelScope.launch { restore.invoke(t) }
+    fun restore(t: DeletedTask) = viewModelScope.launch { restore.invoke(t) }
 }

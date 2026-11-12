@@ -22,6 +22,7 @@ sealed interface Interpretation {
 
     data class Create(val draft: TaskDraft, override val source: InterpretationSource) : Interpretation
     data class Complete(val query: String, val match: TaskMatch, override val source: InterpretationSource) : Interpretation
+    data class Delete(val query: String, val match: TaskMatch, override val source: InterpretationSource) : Interpretation
     data class Unknown(val text: String, override val source: InterpretationSource = InterpretationSource.RULES) : Interpretation
 }
 
@@ -32,6 +33,11 @@ sealed interface Interpretation {
  * at the words that express them). The model can improve intent, title, category and which task is
  * meant, but every model output is validated against the sentence and the real task list; anything
  * that does not check out falls back to the rules.
+ *
+ * Deleting is destructive, so it only happens when the sentence itself has delete wording found by
+ * the rules ("apaga", "exclui", "remove"…). The model can help pick *which* item, never decide *to* delete.
+ *
+ * [candidates] holds every task (open first, then done/archived) and habit; only open ones can be completed.
  */
 object VoiceInterpreter {
 
@@ -44,6 +50,8 @@ object VoiceInterpreter {
     ): Interpretation {
         val rules = VoiceCommandParser.parse(text, now, categories)
         val intent = model?.intent?.lowercase()?.trim()
+        if (rules is VoiceIntent.Delete) return deleteWithModel(rules, model?.takeIf { intent == "delete" }, candidates)
+        // A model "delete" without delete wording in the sentence is ignored (handled like no model).
         if (model == null || intent !in setOf("create", "complete")) return fromRules(rules, candidates)
 
         return when (intent) {
@@ -59,8 +67,8 @@ object VoiceInterpreter {
                 }
             }
             else -> when (rules) {
-                // Explicit completion wording ("concluí", "marca como feito") wins over the model.
-                is VoiceIntent.Complete -> fromRules(rules, candidates)
+                // Explicit completion/deletion wording wins over the model.
+                is VoiceIntent.Complete, is VoiceIntent.Delete -> fromRules(rules, candidates)
                 is VoiceIntent.Create -> Interpretation.Create(refine(rules.draft, text, now, categories, model), InterpretationSource.ON_DEVICE_AI)
                 is VoiceIntent.Unknown -> {
                     val title = model.title?.takeIf { titleIsGrounded(it, text) }
@@ -75,12 +83,25 @@ object VoiceInterpreter {
 
     private fun fromRules(rules: VoiceIntent, candidates: List<CompletionCandidate>): Interpretation = when (rules) {
         is VoiceIntent.Create -> Interpretation.Create(rules.draft, InterpretationSource.RULES)
-        is VoiceIntent.Complete -> Interpretation.Complete(rules.query, TaskMatcher.match(rules.query, candidates), InterpretationSource.RULES)
+        is VoiceIntent.Complete -> Interpretation.Complete(rules.query, TaskMatcher.match(rules.query, candidates.filter { it.open }), InterpretationSource.RULES)
+        is VoiceIntent.Delete -> Interpretation.Delete(rules.query, TaskMatcher.match(rules.query, candidates, rules.date), InterpretationSource.RULES)
         is VoiceIntent.Unknown -> Interpretation.Unknown(rules.text)
     }
 
+    private fun deleteWithModel(rules: VoiceIntent.Delete, model: ModelReading?, candidates: List<CompletionCandidate>): Interpretation {
+        val ruleMatch = TaskMatcher.match(rules.query, candidates, rules.date)
+        val target = model?.let { targetOf(it, candidates) }
+        if (target != null) {
+            val related = if (rules.query.isBlank()) target.dueDate == rules.date && rules.date != null
+                else TaskMatcher.score(rules.query, target.title) >= MODEL_TARGET_MIN
+            if (related || (ruleMatch is TaskMatch.Ambiguous && ruleMatch.options.any { it.candidate == target }))
+                return Interpretation.Delete(rules.query, TaskMatch.Unique(ScoredCandidate(target, 1.0)), InterpretationSource.ON_DEVICE_AI)
+        }
+        return Interpretation.Delete(rules.query, ruleMatch, InterpretationSource.RULES)
+    }
+
     private fun completeWithModel(query: String, model: ModelReading, candidates: List<CompletionCandidate>): Interpretation {
-        val ruleMatch = TaskMatcher.match(query, candidates)
+        val ruleMatch = TaskMatcher.match(query, candidates.filter { it.open })
         val target = targetOf(model, candidates)
         if (target != null) {
             val score = TaskMatcher.score(query, target.title)

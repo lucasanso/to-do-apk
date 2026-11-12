@@ -130,4 +130,40 @@ class AppSmokeTest {
         tab("Tarefas")
         waitText("Relatório mensal")
     }
+
+    @Test fun voiceDelete() {
+        waitText("FOCO")
+        openCapture()
+        say("Comprar pão amanhã")
+        waitText("Tarefa criada")
+
+        // Delete asks first, then offers undo.
+        say("apaga a tarefa comprar pão")
+        waitText("Apagar esta tarefa?")
+        rule.onNodeWithText("Apagar").performClick()
+        waitText("Tarefa apagada")
+        rule.onNodeWithText("Desfazer").performClick()
+        waitText("Desfeito")
+
+        // Cancel keeps it.
+        say("exclui comprar pão")
+        waitText("Apagar esta tarefa?")
+        rule.onNodeWithText("Cancelar").performClick()
+
+        // Not found: offer to create it as a new task instead.
+        say("cancela a assinatura da academia")
+        waitText("Criar como nova tarefa")
+        rule.onNodeWithText("Criar como nova tarefa").performClick()
+        waitText("Tarefa criada")
+
+        // Delete for real and check the list.
+        say("remove comprar pão")
+        waitText("Apagar esta tarefa?")
+        rule.onNodeWithText("Apagar").performClick()
+        waitText("Tarefa apagada")
+        Espresso.pressBack()
+        tab("Tarefas")
+        waitText("Cancela a assinatura da academia")
+        rule.waitUntil(5_000) { rule.onAllNodesWithText("Comprar pão").fetchSemanticsNodes().isEmpty() }
+    }
 }

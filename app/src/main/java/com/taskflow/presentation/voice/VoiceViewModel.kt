@@ -17,6 +17,7 @@ import com.taskflow.domain.voice.Interpretation
 import com.taskflow.domain.voice.InterpretationSource
 import com.taskflow.domain.voice.TaskDraft
 import com.taskflow.domain.voice.TaskMatch
+import com.taskflow.domain.voice.VoiceCommandParser
 import com.taskflow.presentation.util.formatDue
 import com.taskflow.presentation.util.formatMinutes
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -31,8 +32,13 @@ sealed interface VoiceUi {
     data class Listening(val partial: String = "", val level: Float = 0f) : VoiceUi
     data class Thinking(val text: String) : VoiceUi
     data class Done(val text: String, val outcome: VoiceOutcome, val source: InterpretationSource, val undone: Boolean = false) : VoiceUi
-    data class Choose(val text: String, val options: List<CompletionCandidate>) : VoiceUi
-    data class Message(val text: String?, val message: String) : VoiceUi
+    data class Choose(val text: String, val options: List<CompletionCandidate>, val action: Action = Action.COMPLETE) : VoiceUi
+    /** Deleting always asks first: speech recognition and fuzzy matching can pick the wrong item. */
+    data class ConfirmDelete(val text: String, val candidate: CompletionCandidate, val source: InterpretationSource) : VoiceUi
+    /** [offerCreate]: the sentence could also be a new task ("cancela a assinatura") — offer that. */
+    data class Message(val text: String?, val message: String, val offerCreate: Boolean = false) : VoiceUi
+
+    enum class Action { COMPLETE, DELETE }
 }
 
 @HiltViewModel
@@ -85,13 +91,35 @@ class VoiceViewModel @Inject constructor(
                     is TaskMatch.Ambiguous -> VoiceUi.Choose(t, m.options.map { it.candidate })
                     TaskMatch.NotFound -> VoiceUi.Message(t, "Não encontrei nada aberto parecido com “${result.query}”.")
                 }
-                is Interpretation.Unknown -> VoiceUi.Message(t, "Não entendi o que fazer. Diga, por exemplo, “reunião amanhã às 15h” ou “já paguei a fatura”.")
+                is Interpretation.Delete -> when (val m = result.match) {
+                    is TaskMatch.Unique -> VoiceUi.ConfirmDelete(t, m.match.candidate, result.source)
+                    is TaskMatch.Ambiguous -> VoiceUi.Choose(t, m.options.map { it.candidate }, VoiceUi.Action.DELETE)
+                    TaskMatch.NotFound -> VoiceUi.Message(t, "Não encontrei nada parecido com “${result.query}” para apagar.", offerCreate = true)
+                }
+                is Interpretation.Unknown -> VoiceUi.Message(t, "Não entendi o que fazer. Diga, por exemplo, “reunião amanhã às 15h”, “já paguei a fatura” ou “apaga a tarefa X”.")
             }
         }
     }
 
-    fun choose(text: String, c: CompletionCandidate) {
-        viewModelScope.launch { _ui.value = done(text, exec.complete(c), InterpretationSource.RULES) }
+    /** Picking an item from the list is itself the confirmation, also for deleting. */
+    fun choose(text: String, c: CompletionCandidate, action: VoiceUi.Action) {
+        viewModelScope.launch {
+            _ui.value = done(text, if (action == VoiceUi.Action.DELETE) exec.deleteItem(c) else exec.complete(c), InterpretationSource.RULES)
+        }
+    }
+
+    fun confirmDelete() {
+        val cur = _ui.value as? VoiceUi.ConfirmDelete ?: return
+        viewModelScope.launch { _ui.value = done(cur.text, exec.deleteItem(cur.candidate), cur.source) }
+    }
+
+    /** "Criar como nova tarefa" when a delete request found nothing to delete. */
+    fun createInstead(text: String) {
+        viewModelScope.launch {
+            val draft = VoiceCommandParser.parseAsCreate(text, time.nowDateTime(), categories.getAll().map { it.name })
+            _ui.value = if (draft.title.isBlank()) VoiceUi.Message(text, "Não foi possível criar a tarefa")
+            else done(text, exec.create(draft), InterpretationSource.RULES)
+        }
     }
 
     fun undo() {
