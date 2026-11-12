@@ -2,7 +2,7 @@
 
 Aplicativo Android nativo de produtividade pessoal: **comandos de voz em português** (criar, concluir, apagar e listar tarefas falando, com resposta em voz alta), priorização inteligente explicável, planejamento diário, hábitos com sequências, calendário, estatísticas, lembretes, widget e backup. **100% offline**, sem conta, sem internet, sem analytics.
 
-> **APK pronto:** [`release/TaskFlow-1.3.0.apk`](release/TaskFlow-1.3.0.apk) (assinado em modo release, ~3,7 MB, Android 8.0+). Instala por cima das versões anteriores sem perder dados.
+> **APK pronto:** [`release/TaskFlow-1.4.0.apk`](release/TaskFlow-1.4.0.apk) (assinado em modo release, ~3,7 MB, Android 8.0+). Instala por cima das versões anteriores sem perder dados.
 
 ## Capturas de tela
 
@@ -12,9 +12,9 @@ Aplicativo Android nativo de produtividade pessoal: **comandos de voz em portugu
 |---|---|---|---|---|
 | ![](docs/screenshots/01-hoje.png) | ![](docs/screenshots/10-voz-criar.png) | ![](docs/screenshots/11-voz-concluir.png) | ![](docs/screenshots/12-voz-apagar.png) | ![](docs/screenshots/13-voz-listar.png) |
 
-| Tarefas | Prioridade explicada | Meu dia | Hábitos | Agenda |
+| Voz das respostas | Tarefas | Prioridade explicada | Meu dia | Hábitos |
 |---|---|---|---|---|
-| ![](docs/screenshots/02-tarefas.png) | ![](docs/screenshots/03-detalhe-prioridade.png) | ![](docs/screenshots/04-meu-dia.png) | ![](docs/screenshots/05-habitos.png) | ![](docs/screenshots/06-agenda.png) |
+| ![](docs/screenshots/14-voz-escolha.png) | ![](docs/screenshots/02-tarefas.png) | ![](docs/screenshots/03-detalhe-prioridade.png) | ![](docs/screenshots/04-meu-dia.png) | ![](docs/screenshots/05-habitos.png) |
 
 Renderizadas do app real com dados de exemplo (o app começa vazio). Para regerar:
 
@@ -28,7 +28,7 @@ As imagens saem em `app/build/screenshots/`.
 
 ## Instalação no Galaxy S26
 
-1. Copie `release/TaskFlow-1.3.0.apk` para o celular (cabo USB, Google Drive, e-mail para si mesmo etc.).
+1. Copie `release/TaskFlow-1.4.0.apk` para o celular (cabo USB, Google Drive, e-mail para si mesmo etc.).
 2. Abra o arquivo no app **Meus Arquivos**. Na primeira vez, o Android pede para permitir "Instalar apps desconhecidos" para o app usado para abrir — permita.
 3. Se o **Auto Blocker** da Samsung estiver ativo (Configurações › Segurança e privacidade › Auto Blocker), desative-o temporariamente para instalar.
 4. Ao abrir o TaskFlow, permita **notificações**. Para lembretes no minuto exato, vá em *Configurações do app › Notificações › Lembretes pontuais* e ative "Alarmes e lembretes".
@@ -69,6 +69,13 @@ Depois de cada comando aparece o que foi entendido, com **Desfazer** (e **Ajusta
 - **Abrir na lista** leva para a tela de Tarefas com o mesmo filtro.
 
 Quando o comando veio pelo microfone, o app também **lê a resposta em voz alta** com o leitor de texto do aparelho, por exemplo: “Hoje você tem 2 tarefas: Reunião com cliente, às 15:00; e Pagar fatura. Também 1 atrasada: Corrigir pipeline. Hábitos que faltam: Estudar SQL.” As confirmações também são faladas (“Criada: …”, “Pronto, … concluída.”). Pode ser desligado em Configurações › Voz e IA › Responder em voz alta. Perguntas digitadas não são lidas.
+
+**Escolher a voz das respostas** (Configurações › Voz e IA › Voz das respostas):
+- **Mecanismo:** padrão do celular, Samsung TTS ou o do Google.
+- **Voz em português:** Feminina/Masculina (Samsung), Voz 1, 2, 3… (Google), com etiquetas de "no aparelho", "precisa baixar" e "online".
+- **Velocidade e tom.**
+- **Ouvir:** toca uma amostra com o mesmo código que lê as respostas, então o que se ouve ali é o que se ouve depois. A escolha vale só para o TaskFlow e não muda o padrão do celular.
+- **Proteção contra falhas:** se a voz escolhida for desinstalada ou não estiver baixada, o app usa a voz padrão em português e avisa, em vez de ficar mudo. Se o mecanismo for removido, usa o padrão do celular.
 
 **Apagar é sempre confirmado.** O reconhecimento de voz e a busca aproximada podem errar, então o app mostra a tarefa encontrada (com data ou "concluída") e só apaga depois de você tocar em **Apagar**. Mesmo depois disso dá para **Desfazer**: a tarefa volta com o mesmo histórico, no "Meu dia" se estava planejada e reconectada às tarefas que dependiam dela. Também funciona com tarefas já concluídas.
 - Infinitivo sozinho continua criando tarefa: "cancelar assinatura da Netflix" e "tirar o lixo amanhã" viram tarefas novas. Para apagar, use o imperativo ("cancela…", "apaga…") ou "a tarefa…".
@@ -233,7 +240,8 @@ TaskFlow Voz (botão lateral, Bixby/Gemini “abrir”, widget, compartilhar) �
 5. **Testes e distribuição** — testes automatizados, correção dos bugs encontrados, APK release com R8 e assinatura.
 6. **v1.1 — Voz e minimalismo** — comandos de voz (criar/concluir), Gemini Nano no aparelho, entradas do sistema (botão lateral, Bixby/Gemini, widget, compartilhar), interface simplificada (4 abas, linhas e cartões enxutos). Kotlin 2.3, Room 2.8, Hilt 2.58.
 7. **v1.2 — Apagar por voz** — tarefas e hábitos existentes (inclusive concluídos), com confirmação, escolha entre parecidos e desfazer completo (mesmo id, Meu dia e dependências).
-8. **v1.3 — Listar por voz** — perguntas sobre o dia, períodos, atrasadas, concluídas, prioridades, hábitos, categoria e assunto; resposta na tela (com concluir no lugar) e em voz alta. 139 testes.
+8. **v1.3 — Listar por voz** — perguntas sobre o dia, períodos, atrasadas, concluídas, prioridades, hábitos, categoria e assunto; resposta na tela (com concluir no lugar) e em voz alta.
+9. **v1.4 — Voz das respostas e microfone estável** — escolha de mecanismo, voz, velocidade e tom dentro do app, com amostra. O microfone deixou de falhar às vezes com os erros 5 e 11: cada escuta tem identificador próprio (avisos de escutas canceladas são ignorados), o reinício espera o serviço liberar, erros passageiros são repetidos sozinhos com um reconhecedor novo, e o modo no aparelho cai para o serviço do sistema se insistir em falhar. 157 testes.
 
 ---
 
@@ -281,8 +289,10 @@ keytool -genkeypair -keystore keystore/taskflow-release.jks -alias taskflow -key
 | `VoiceInterpreterTest` | fusão regras + Gemini Nano (título inventado rejeitado, categoria inexistente ignorada, alvo inválido descartado, modelo nunca apaga sozinho, modelo pode reconhecer perguntas sem sobrepor comandos explícitos), parsing do JSON do modelo, executar e desfazer (criar, concluir, recorrência, hábito, apagar tarefa e hábito) |
 | `VoiceQueryTest` | reconhece perguntas (hoje, outros dias, períodos, atrasadas, concluídas, prioridades, hábitos, categoria com sinônimo, assunto) e não confunde comandos (“ver o filme amanhã”, “lista de exercícios para sexta”, “agenda reunião”) |
 | `VoiceAnswerTest` | monta a resposta: seções, ordem, texto falado exato (incluindo “nada pendente”, “No sábado…”), filtro equivalente |
+| `SpeechInputTest` (Robolectric) | erros 5 e 11 reproduzidos no serviço de voz simulado: aviso de sessão cancelada ignorado, nova tentativa automática, troca para o serviço do sistema, o que já foi ouvido é aproveitado, parar antes de começar, mensagem final sem código. A versão 1.3.0 falha em 7 dos 8 |
+| `VoiceChoiceTest` (Robolectric) | rótulos das vozes Google/Samsung; a voz escolhida é a que fala; voz removida ou não baixada cai para o português; mecanismo sem português ou com falha é informado |
 | `VoiceViewModelTest` (Robolectric) | pergunta falada gera resposta em voz alta e digitada não; concluir pela lista atualiza a resposta; rotas de “Abrir na lista” |
-| `AppSmokeTest` (Robolectric + Compose) | sobe o app real: cria e conclui tarefa por frase, desfaz; apaga por frase com confirmação, cancela, desfaz e "criar como nova tarefa"; pergunta “o que eu tenho hoje?”, conclui pela lista e abre a lista filtrada; detalhe, todas as abas, hábito, telas secundárias, edição, Meu dia, adiar, excluir e desfazer |
+| `AppSmokeTest` (Robolectric + Compose) | sobe o app real: cria e conclui tarefa por frase, desfaz; apaga por frase com confirmação, cancela, desfaz e "criar como nova tarefa"; pergunta “o que eu tenho hoje?”, conclui pela lista e abre a lista filtrada; escolhe a voz nas Configurações e confere que a amostra tocou com ela; detalhe, todas as abas, hábito, telas secundárias, edição, Meu dia, adiar, excluir e desfazer |
 | `VoiceEntryTest` | “Compartilhar → TaskFlow”: a frase compartilhada vira tarefa com data e hora |
 | `ScreenshotTest` | gera as capturas de tela acima (só roda com `-Pscreenshots`) |
 
@@ -294,6 +304,7 @@ Sem permissão de **INTERNET**: o app não tem como transmitir dados. A permiss�
 
 - Validado em testes automatizados (incluindo o app completo sob Robolectric), mas **não executado num aparelho físico** durante o desenvolvimento. Vale testar no S26 notificações, widget, microfone e Gemini Nano: o ambiente de build não tem microfone nem AICore, então a voz foi testada com o mesmo texto digitado.
 - O Gemini Nano depende do AICore do aparelho e da disponibilidade do modelo; se não estiver pronto, o app usa o interpretador local sem avisar erro. A integração com o **assistente** Gemini (AppFunctions) ainda não está aberta a apps instalados por APK.
+- Se o serviço de voz do celular falhar várias vezes seguidas (raro), o app mostra "O serviço de voz do celular não respondeu. Toque no microfone para tentar de novo."
 - Sem o pacote de Português offline, o reconhecimento de voz usa o serviço do sistema, que pode processar o áudio na nuvem do provedor (Google/Samsung). O TaskFlow em si não acessa a rede.
 - Sem "Alarmes e lembretes" permitido, o Android pode atrasar lembretes alguns minutos (modo econômico).
 - O widget se atualiza a cada alteração enquanto o app está em memória, ao concluir pelo próprio widget/notificação e a cada 30 min.

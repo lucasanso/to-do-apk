@@ -13,6 +13,8 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performScrollTo
+import org.junit.Assert.assertEquals
 import androidx.test.espresso.Espresso
 import com.taskflow.MainActivity
 import org.junit.Rule
@@ -190,5 +192,51 @@ class AppSmokeTest {
         waitText("Revisar contrato")
         // The "Amanhã" filter is active (it shows a clear button).
         rule.onNodeWithContentDescription("Limpar filtro").assertIsDisplayed()
+    }
+
+    /** Starts the most recently created text-to-speech engine (Robolectric does not do it by itself). */
+    private fun startLatestTts(previous: android.speech.tts.TextToSpeech?): android.speech.tts.TextToSpeech {
+        // waitForIdle lets the app's pending work (settings write, then creating the reader) run.
+        repeat(100) {
+            rule.waitForIdle()
+            val t = org.robolectric.shadows.ShadowTextToSpeech.getLastTextToSpeechInstance()
+            if (t != null && t !== previous) return@repeat
+            Thread.sleep(50)
+        }
+        val t = org.robolectric.shadows.ShadowTextToSpeech.getLastTextToSpeechInstance()
+        rule.runOnUiThread { org.robolectric.Shadows.shadowOf(t).onInitListener.onInit(android.speech.tts.TextToSpeech.SUCCESS) }
+        rule.waitForIdle()
+        return t
+    }
+
+    @Test fun chooseReplyVoice() {
+        val ptBR = java.util.Locale.forLanguageTag("pt-BR")
+        fun v(name: String) = android.speech.tts.Voice(name, ptBR, android.speech.tts.Voice.QUALITY_HIGH, android.speech.tts.Voice.LATENCY_NORMAL, false, emptySet())
+        org.robolectric.shadows.ShadowTextToSpeech.addVoice(v("pt-BR-SMTf00"))
+        org.robolectric.shadows.ShadowTextToSpeech.addVoice(v("pt-BR-SMTm00"))
+        org.robolectric.shadows.ShadowTextToSpeech.addLanguageAvailability(ptBR)
+
+        waitText("FOCO")
+        rule.onNodeWithContentDescription("Mais opções").performClick()
+        rule.onNodeWithText("Configurações").performClick()
+        rule.onNodeWithText("Voz das respostas").performScrollTo().performClick()
+        waitText("MECANISMO DE VOZ")
+
+        // The screen reads the installed voices from the engine.
+        val catalog = startLatestTts(null)
+        waitText("Masculina 1")
+        waitText("Feminina 1")
+
+        // Choosing a voice saves it and plays the sample with that exact voice.
+        rule.onNodeWithText("Masculina 1").performClick()
+        val preview = startLatestTts(catalog)
+        waitText("Tocando: Masculina 1")
+        val shadow = org.robolectric.Shadows.shadowOf(preview)
+        assertEquals("pt-BR-SMTm00", shadow.currentVoice!!.name)
+        assertEquals(com.taskflow.presentation.voice.VoiceReply.SAMPLE, shadow.lastSpokenText)
+
+        // The choice is kept.
+        rule.onNodeWithContentDescription("Voltar").performClick()
+        waitText("Voz escolhida no app", substring = true)
     }
 }

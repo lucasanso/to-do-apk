@@ -8,6 +8,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.SemanticsMatcher
@@ -88,6 +89,29 @@ class ScreenshotTest {
         }
     }
 
+    @Test fun voiceChoice() {
+        val ptBR = java.util.Locale.forLanguageTag("pt-BR")
+        fun v(name: String, q: Int = android.speech.tts.Voice.QUALITY_HIGH, net: Boolean = false, f: Set<String> = emptySet()) =
+            android.speech.tts.Voice(name, ptBR, q, android.speech.tts.Voice.LATENCY_NORMAL, net, f)
+        listOf(v("pt-BR-language"), v("pt-br-x-afs-local", 400), v("pt-br-x-ptd-local"), v("pt-br-x-pte-local", f = setOf("notInstalled")),
+            v("pt-br-x-afs-network", net = true), v("pt-BR-SMTf00"), v("pt-BR-SMTm00")).forEach(org.robolectric.shadows.ShadowTextToSpeech::addVoice)
+        org.robolectric.shadows.ShadowTextToSpeech.addLanguageAvailability(ptBR)
+        seed()
+        ActivityScenario.launch(MainActivity::class.java).use { sc -> scenario = sc
+            waitText("FOCO")
+            rule.onNodeWithContentDescription("Mais opções").performClick()
+            rule.onNodeWithText("Configurações").performClick()
+            rule.onNodeWithText("Voz das respostas").performScrollTo().performClick()
+            waitText("MECANISMO DE VOZ")
+            val catalog = startLatestTts(null)
+            waitText("Feminina 1")
+            rule.onNodeWithText("Feminina 1").performClick()
+            startLatestTts(catalog)
+            waitText("Tocando: Feminina 1")
+            shot("14-voz-escolha")
+        }
+    }
+
     @Test @Config(qualifiers = "w412dp-h915dp-night-xhdpi")
     fun dark() {
         seed()
@@ -115,6 +139,19 @@ class ScreenshotTest {
     private fun say(text: String) {
         rule.onNode(hasSetTextAction()).performTextInput(text)
         rule.onNodeWithContentDescription("Enviar").performClick()
+    }
+
+    private fun startLatestTts(previous: android.speech.tts.TextToSpeech?): android.speech.tts.TextToSpeech {
+        repeat(100) {
+            rule.waitForIdle()
+            val t = org.robolectric.shadows.ShadowTextToSpeech.getLastTextToSpeechInstance()
+            if (t != null && t !== previous) return@repeat
+            Thread.sleep(50)
+        }
+        val t = org.robolectric.shadows.ShadowTextToSpeech.getLastTextToSpeechInstance()
+        scenario.onActivity { org.robolectric.Shadows.shadowOf(t).onInitListener.onInit(android.speech.tts.TextToSpeech.SUCCESS) }
+        rule.waitForIdle()
+        return t
     }
 
     private lateinit var scenario: ActivityScenario<MainActivity>

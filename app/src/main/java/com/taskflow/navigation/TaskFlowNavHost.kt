@@ -124,7 +124,8 @@ fun TaskFlowNavHost(
                 composable(Routes.HABIT_EDIT, arguments = listOf(navArgument("id") { type = NavType.LongType })) { HabitEditScreen(back) }
                 composable(Routes.STATS) { StatsScreen(back, navigate) }
                 composable(Routes.CATEGORIES) { CategoriesScreen(back, navigate) }
-                composable(Routes.SETTINGS) { SettingsScreen(back, requestNotificationPermission) }
+                composable(Routes.SETTINGS) { SettingsScreen(back, requestNotificationPermission, onOpenVoiceChoice = { navigate(Routes.VOICE_REPLY) }) }
+                composable(Routes.VOICE_REPLY) { com.taskflow.presentation.settings.VoiceReplyScreen(back) }
                 composable(Routes.HISTORY) { HistoryScreen(back, navigate) }
             }
         }

@@ -20,6 +20,7 @@ object Routes {
     const val CATEGORIES = "categories"
     const val SETTINGS = "settings"
     const val HISTORY = "history"
+    const val VOICE_REPLY = "voice_reply"
 
     fun tasks(filter: String? = null, category: Long? = null, search: Boolean = false) =
         "tasks?filter=${filter ?: ""}&category=${category ?: -1}&search=$search"

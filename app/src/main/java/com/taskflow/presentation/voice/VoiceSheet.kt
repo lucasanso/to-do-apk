@@ -113,7 +113,13 @@ fun VoiceCaptureSheet(
     val firstReplyId = remember { vm.reply.value?.id ?: 0L }
     LaunchedEffect(reply) {
         val r = reply ?: return@LaunchedEffect
-        if (r.id > firstReplyId) (voiceReply ?: VoiceReply(context).also { voiceReply = it }).speak(r.text)
+        if (r.id <= firstReplyId) return@LaunchedEffect
+        // Same voice as chosen in Settings; a new choice recreates the reader.
+        val current = voiceReply?.takeIf { it.prefs == r.voice } ?: run {
+            voiceReply?.shutdown()
+            VoiceReply(context, r.voice).also { voiceReply = it }
+        }
+        current.speak(r.text)
     }
     var typing by remember { mutableStateOf(!startWithVoice || initialText != null) }
     var text by remember { mutableStateOf("") }
@@ -125,6 +131,8 @@ fun VoiceCaptureSheet(
     }
 
     fun listen() {
+        // If the app was talking, give the audio a moment to be released before opening the microphone.
+        val wasTalking = voiceReply?.isSpeaking() == true
         voiceReply?.stop()
         typing = false
         if (!speech.isAvailable()) {
@@ -135,13 +143,14 @@ fun VoiceCaptureSheet(
             return
         }
         vm.listening("", 0f)
-        speech.start { e ->
+        speech.start(delayMs = if (wasTalking) 350 else 0) { e ->
             when (e) {
                 SpeechInput.Event.Ready -> Unit
                 is SpeechInput.Event.Level -> vm.listening("", e.rms)
                 is SpeechInput.Event.Partial -> vm.listening(e.text, 0.3f)
                 is SpeechInput.Event.Final -> vm.submit(e.text, fromVoice = true)
                 is SpeechInput.Event.Error -> vm.error(e.message)
+                SpeechInput.Event.Cancelled -> vm.idle()
             }
         }
     }

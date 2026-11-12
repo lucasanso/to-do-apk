@@ -118,4 +118,16 @@ class VoiceViewModelTest {
         assertNull(vm.routeFor((vm.ui.value as VoiceUi.Listing).listing.copy(habitsOnly = false, smartFilter = null)))
         assertTrue(true)
     }
+
+    @Test fun `spoken replies carry the voice chosen in settings`() {
+        val repoSettings = SettingsRepository(ApplicationProvider.getApplicationContext())
+        runBlocking { repoSettings.update { it.copy(ttsEngine = "com.google.android.tts", ttsVoice = "pt-br-x-ptd-local", ttsRate = 1.3f) } }
+        vm.submit("o que eu tenho hoje?", fromVoice = true)
+        await { vm.reply.value != null }
+        val v = vm.reply.value!!.voice
+        assertEquals("com.google.android.tts", v.engine)
+        assertEquals("pt-br-x-ptd-local", v.voice)
+        assertEquals(1.3f, v.rate)
+        runBlocking { repoSettings.update { it.copy(ttsEngine = null, ttsVoice = null, ttsRate = null) } }
+    }
 }

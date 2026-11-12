@@ -118,7 +118,12 @@ class SettingsViewModel @Inject constructor(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(onBack: () -> Unit, requestNotificationPermission: () -> Unit, vm: SettingsViewModel = hiltViewModel()) {
+fun SettingsScreen(
+    onBack: () -> Unit,
+    requestNotificationPermission: () -> Unit,
+    onOpenVoiceChoice: () -> Unit = {},
+    vm: SettingsViewModel = hiltViewModel(),
+) {
     val s by vm.settings.collectAsStateWithLifecycle()
     val ctx = LocalContext.current
     val messenger = LocalMessenger.current
@@ -141,7 +146,7 @@ fun SettingsScreen(onBack: () -> Unit, requestNotificationPermission: () -> Unit
             }
             if (Build.VERSION.SDK_INT >= 31) ToggleRow("Cores do sistema (Material You)", "Usa a paleta do papel de parede", s.dynamicColor) { v -> vm.update { it.copy(dynamicColor = v) } }
 
-            VoiceSettingsSection(s, onUpdate = { f -> vm.update(f) })
+            VoiceSettingsSection(s, onUpdate = { f -> vm.update(f) }, onOpenVoiceChoice = onOpenVoiceChoice)
 
             SectionHeader("Notificações")
             if (!vm.notifier.canPost()) ActionRow("Permitir notificações", "O Android está bloqueando as notificações do app", requestNotificationPermission)

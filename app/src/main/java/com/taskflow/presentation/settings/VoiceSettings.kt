@@ -127,7 +127,12 @@ class VoiceSettingsViewModel @Inject constructor(
 }
 
 @Composable
-fun VoiceSettingsSection(s: AppSettings, onUpdate: ((AppSettings) -> AppSettings) -> Unit, vm: VoiceSettingsViewModel = hiltViewModel()) {
+fun VoiceSettingsSection(
+    s: AppSettings,
+    onUpdate: ((AppSettings) -> AppSettings) -> Unit,
+    onOpenVoiceChoice: () -> Unit = {},
+    vm: VoiceSettingsViewModel = hiltViewModel(),
+) {
     val v by vm.state.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { vm.refresh() }
 
@@ -165,6 +170,14 @@ fun VoiceSettingsSection(s: AppSettings, onUpdate: ((AppSettings) -> AppSettings
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Switch(s.speakReplies, { b -> onUpdate { it.copy(speakReplies = b) } })
+    }
+    Column(Modifier.fillMaxWidth().clickable(onClick = onOpenVoiceChoice).padding(horizontal = 20.dp, vertical = 12.dp)) {
+        Text("Voz das respostas", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.primary)
+        Text(when {
+            s.ttsVoice != null -> "Voz escolhida no app" + (if (s.ttsRate != null || s.ttsPitch != null) " · velocidade/tom ajustados" else "")
+            s.ttsEngine != null -> "Mecanismo escolhido no app, voz padrão em português"
+            else -> "Padrão do celular · toque para escolher a voz, a velocidade e o tom"
+        }, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
     Row(Modifier.fillMaxWidth().clickable { vm.setLauncher(!v.launcherEnabled) }.padding(horizontal = 20.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically) {

@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -33,6 +34,13 @@ data class AppSettings(
     val voiceFirst: Boolean = true,
     /** Read answers aloud (on-device text-to-speech) when the command was spoken. */
     val speakReplies: Boolean = true,
+    /** Text-to-speech engine package for replies; null = the phone's default engine. */
+    val ttsEngine: String? = null,
+    /** Voice name inside that engine; null = the engine's default Portuguese voice. */
+    val ttsVoice: String? = null,
+    /** Speech rate and pitch (1.0 = normal); null = keep the phone's settings. */
+    val ttsRate: Float? = null,
+    val ttsPitch: Float? = null,
 )
 
 private val Context.dataStore by preferencesDataStore("settings")
@@ -52,6 +60,10 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val onDeviceAi = booleanPreferencesKey("on_device_ai")
         val voiceFirst = booleanPreferencesKey("voice_first")
         val speakReplies = booleanPreferencesKey("speak_replies")
+        val ttsEngine = stringPreferencesKey("tts_engine")
+        val ttsVoice = stringPreferencesKey("tts_voice")
+        val ttsRate = floatPreferencesKey("tts_rate")
+        val ttsPitch = floatPreferencesKey("tts_pitch")
     }
 
     val settings: Flow<AppSettings> = context.dataStore.data.map(::map)
@@ -71,6 +83,10 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         useOnDeviceAi = p[K.onDeviceAi] ?: true,
         voiceFirst = p[K.voiceFirst] ?: true,
         speakReplies = p[K.speakReplies] ?: true,
+        ttsEngine = p[K.ttsEngine],
+        ttsVoice = p[K.ttsVoice],
+        ttsRate = p[K.ttsRate],
+        ttsPitch = p[K.ttsPitch],
     )
 
     suspend fun update(transform: (AppSettings) -> AppSettings) {
@@ -88,6 +104,10 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
             p[K.onDeviceAi] = s.useOnDeviceAi
             p[K.voiceFirst] = s.voiceFirst
             p[K.speakReplies] = s.speakReplies
+            s.ttsEngine?.let { p[K.ttsEngine] = it } ?: p.remove(K.ttsEngine)
+            s.ttsVoice?.let { p[K.ttsVoice] = it } ?: p.remove(K.ttsVoice)
+            s.ttsRate?.let { p[K.ttsRate] = it.coerceIn(0.5f, 2f) } ?: p.remove(K.ttsRate)
+            s.ttsPitch?.let { p[K.ttsPitch] = it.coerceIn(0.5f, 2f) } ?: p.remove(K.ttsPitch)
         }
     }
 }

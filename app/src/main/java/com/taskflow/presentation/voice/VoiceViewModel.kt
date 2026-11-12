@@ -68,14 +68,16 @@ class VoiceViewModel @Inject constructor(
     suspend fun voiceFirst(): Boolean = settings.current().voiceFirst
 
     /** Text to read aloud. Only emitted for commands that came from the microphone, and if enabled. */
-    data class Reply(val id: Long, val text: String)
+    data class Reply(val id: Long, val text: String, val voice: ReplyVoice = ReplyVoice())
     private val _reply = MutableStateFlow<Reply?>(null)
     val reply: StateFlow<Reply?> = _reply.asStateFlow()
     private var replyCount = 0L
 
     private suspend fun show(next: VoiceUi, fromVoice: Boolean) {
         _ui.value = next
-        if (fromVoice && settings.current().speakReplies) spokenFor(next)?.let { _reply.value = Reply(++replyCount, it) }
+        if (!fromVoice) return
+        val s = settings.current()
+        if (s.speakReplies) spokenFor(next)?.let { _reply.value = Reply(++replyCount, it, s.replyVoice()) }
     }
 
     private fun spokenFor(u: VoiceUi): String? = when (u) {
