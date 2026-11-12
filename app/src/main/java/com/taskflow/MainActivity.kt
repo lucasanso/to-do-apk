@@ -56,6 +56,12 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        // The app is in the foreground: the moment Android allows (re)starting the shake service.
+        lifecycleScope.launch { com.taskflow.shake.ShakeController.sync(this@MainActivity, settings.current()) }
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         handleIntent(intent)

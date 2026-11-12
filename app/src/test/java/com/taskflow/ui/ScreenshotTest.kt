@@ -112,6 +112,23 @@ class ScreenshotTest {
         }
     }
 
+    @Test fun shakeSettings() {
+        seed()
+        ActivityScenario.launch(MainActivity::class.java).use { sc -> scenario = sc
+            waitText("FOCO")
+            rule.onNodeWithContentDescription("Mais opções").performClick()
+            rule.onNodeWithText("Configurações").performClick()
+            rule.onNodeWithText("Balançar para falar").performScrollTo().performClick()
+            waitText("Sensibilidade")
+            rule.onNodeWithText("Média").performScrollTo().performClick()
+            rule.onNodeWithText("Funciona com a tela ligada", substring = true).performScrollTo()
+            rule.waitForIdle()
+            shot("15-balancar-para-falar")
+            rule.onNodeWithText("Balançar para falar").performScrollTo().performClick()   // leave it off for the other tests
+            rule.waitUntil(5_000) { rule.onAllNodesWithText("Sensibilidade").fetchSemanticsNodes().isEmpty() }
+        }
+    }
+
     @Test @Config(qualifiers = "w412dp-h915dp-night-xhdpi")
     fun dark() {
         seed()

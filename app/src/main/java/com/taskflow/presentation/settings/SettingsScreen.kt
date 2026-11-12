@@ -147,6 +147,7 @@ fun SettingsScreen(
             if (Build.VERSION.SDK_INT >= 31) ToggleRow("Cores do sistema (Material You)", "Usa a paleta do papel de parede", s.dynamicColor) { v -> vm.update { it.copy(dynamicColor = v) } }
 
             VoiceSettingsSection(s, onUpdate = { f -> vm.update(f) }, onOpenVoiceChoice = onOpenVoiceChoice)
+            ShakeSettingsSection()
 
             SectionHeader("Notificações")
             if (!vm.notifier.canPost()) ActionRow("Permitir notificações", "O Android está bloqueando as notificações do app", requestNotificationPermission)

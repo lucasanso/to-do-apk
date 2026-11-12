@@ -27,8 +27,18 @@ class VoiceCaptureActivity : ComponentActivity() {
     @Inject lateinit var settings: SettingsRepository
     private val vm: VoiceViewModel by viewModels()
 
+    override fun onResume() {
+        super.onResume()
+        isVisible = true
+        lastShownAt = android.os.SystemClock.elapsedRealtime()
+        com.taskflow.shake.ShakeController.cancelPrompt(this)
+    }
+    override fun onPause() { isVisible = false; super.onPause() }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Opened by a shake: the heads-up safety net is no longer needed.
+        com.taskflow.shake.ShakeController.cancelPrompt(this)
         enableEdgeToEdge()
         val shared = sharedText(intent)
         val typing = intent?.action == ACTION_TYPE
@@ -64,5 +74,11 @@ class VoiceCaptureActivity : ComponentActivity() {
     companion object {
         const val ACTION_VOICE = "com.taskflow.VOICE"
         const val ACTION_TYPE = "com.taskflow.TYPE"
+
+        /** True while the voice screen is on top; a shake then does nothing. */
+        @Volatile var isVisible = false
+
+        /** When the voice screen last came on top (elapsedRealtime), to tell whether a shake opened it. */
+        @Volatile var lastShownAt = 0L
     }
 }

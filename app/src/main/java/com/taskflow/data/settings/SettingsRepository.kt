@@ -41,6 +41,10 @@ data class AppSettings(
     /** Speech rate and pitch (1.0 = normal); null = keep the phone's settings. */
     val ttsRate: Float? = null,
     val ttsPitch: Float? = null,
+    /** Shake the phone (screen on, unlocked) to open voice capture, even with the app closed. */
+    val shakeToTalk: Boolean = false,
+    /** 0 = baixa, 1 = média, 2 = alta. */
+    val shakeSensitivity: Int = 1,
 )
 
 private val Context.dataStore by preferencesDataStore("settings")
@@ -64,6 +68,8 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val ttsVoice = stringPreferencesKey("tts_voice")
         val ttsRate = floatPreferencesKey("tts_rate")
         val ttsPitch = floatPreferencesKey("tts_pitch")
+        val shakeToTalk = booleanPreferencesKey("shake_to_talk")
+        val shakeSensitivity = intPreferencesKey("shake_sensitivity")
     }
 
     val settings: Flow<AppSettings> = context.dataStore.data.map(::map)
@@ -87,6 +93,8 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         ttsVoice = p[K.ttsVoice],
         ttsRate = p[K.ttsRate],
         ttsPitch = p[K.ttsPitch],
+        shakeToTalk = p[K.shakeToTalk] ?: false,
+        shakeSensitivity = p[K.shakeSensitivity] ?: 1,
     )
 
     suspend fun update(transform: (AppSettings) -> AppSettings) {
@@ -108,6 +116,8 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
             s.ttsVoice?.let { p[K.ttsVoice] = it } ?: p.remove(K.ttsVoice)
             s.ttsRate?.let { p[K.ttsRate] = it.coerceIn(0.5f, 2f) } ?: p.remove(K.ttsRate)
             s.ttsPitch?.let { p[K.ttsPitch] = it.coerceIn(0.5f, 2f) } ?: p.remove(K.ttsPitch)
+            p[K.shakeToTalk] = s.shakeToTalk
+            p[K.shakeSensitivity] = s.shakeSensitivity.coerceIn(0, 2)
         }
     }
 }

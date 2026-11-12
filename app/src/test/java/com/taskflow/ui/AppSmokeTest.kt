@@ -239,4 +239,46 @@ class AppSmokeTest {
         rule.onNodeWithContentDescription("Voltar").performClick()
         waitText("Voz escolhida no app", substring = true)
     }
+
+    @Test fun turnOnShakeToTalk() {
+        val app = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.app.Application>()
+        fun serviceRequests(): List<String> = generateSequence { org.robolectric.Shadows.shadowOf(app).nextStartedService }
+            .mapNotNull { it.component?.className }.toList()
+
+        waitText("FOCO")
+        rule.onNodeWithContentDescription("Mais opções").performClick()
+        rule.onNodeWithText("Configurações").performClick()
+        rule.onNodeWithText("Balançar para falar").performScrollTo().performClick()
+
+        // Turning it on saves the choice, starts the background service and shows the setup steps.
+        waitText("Sensibilidade")
+        assertEquals(true, kotlinx.coroutines.runBlocking { com.taskflow.data.settings.SettingsRepository(app).current() }.shakeToTalk)
+        assertEquals(true, com.taskflow.shake.ShakeService::class.java.name in serviceRequests())
+        rule.onNodeWithText("Abrir o microfone direto").performScrollTo().assertIsDisplayed()
+        waitText("Aparecer sobre outros apps", substring = true)
+
+        // Coming back from the system screen with the permission granted updates the status.
+        org.robolectric.shadows.ShadowSettings.setCanDrawOverlays(true)
+        rule.activityRule.scenario.moveToState(androidx.lifecycle.Lifecycle.State.STARTED)
+        rule.activityRule.scenario.moveToState(androidx.lifecycle.Lifecycle.State.RESUMED)
+        waitText("Permitido: o balanço abre o microfone na hora", substring = true)
+
+        // Sensitivity is saved.
+        rule.onNodeWithText("Alta").performScrollTo().performClick()
+        var level = -1
+        repeat(100) {
+            if (level == 2) return@repeat
+            rule.waitForIdle(); Thread.sleep(30)
+            level = kotlinx.coroutines.runBlocking { com.taskflow.data.settings.SettingsRepository(app).current() }.shakeSensitivity
+        }
+        assertEquals(2, level)
+        rule.onNodeWithText("Média").performScrollTo().performClick()   // back to the default
+
+        // Turning it off stops the service.
+        rule.onNodeWithText("Balançar para falar").performScrollTo().performClick()
+        rule.waitUntil(5_000) { rule.onAllNodesWithText("Sensibilidade").fetchSemanticsNodes().isEmpty() }
+        assertEquals(com.taskflow.shake.ShakeService::class.java.name,
+            org.robolectric.Shadows.shadowOf(app).nextStoppedService?.component?.className)
+        org.robolectric.shadows.ShadowSettings.setCanDrawOverlays(false)
+    }
 }

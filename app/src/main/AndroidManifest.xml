@@ -10,6 +10,14 @@
     <!-- Voice capture (speech is recognized by the device's speech service, preferably on-device). -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
+    <!-- Shake to talk: a foreground service keeps the accelerometer available while the app is closed;
+         "Aparecer sobre outros apps" (asked in Settings) lets it open the voice screen by itself;
+         battery exemption keeps Samsung from putting it to sleep. All optional and off by default. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
     <!-- Privacy guarantee: ML Kit pulls in Google's telemetry transport, which requests INTERNET.
          Removing it means the app cannot open network connections at all; Gemini Nano runs in the
          system's AICore service, which downloads its own model. -->
@@ -101,6 +109,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity-alias>
+
+        <service
+            android:name=".shake.ShakeService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Detecta o gesto de balançar o celular para abrir a captura de tarefas por voz" />
+        </service>
 
         <receiver android:name=".notifications.ReminderReceiver" android:exported="false" />
         <receiver android:name=".notifications.NotificationActionReceiver" android:exported="false" />

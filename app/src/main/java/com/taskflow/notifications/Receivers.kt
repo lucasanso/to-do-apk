@@ -108,8 +108,16 @@ class NotificationActionReceiver : BroadcastReceiver() {
 @AndroidEntryPoint
 class RescheduleReceiver : BroadcastReceiver() {
     @Inject lateinit var sync: ReminderSync
+    @Inject lateinit var settings: SettingsRepository
 
     override fun onReceive(context: Context, intent: Intent) {
+        // Boot and app updates are moments when Android allows starting the shake service again.
+        if (intent.action == Intent.ACTION_BOOT_COMPLETED || intent.action == Intent.ACTION_MY_PACKAGE_REPLACED) {
+            runAsync {
+                val s = settings.current()
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) { com.taskflow.shake.ShakeController.sync(context, s) }
+            }
+        }
         runAsync { sync.rescheduleAll() }
     }
 }

@@ -29,6 +29,10 @@ class Notifier @Inject constructor(@ApplicationContext private val context: Cont
         const val CH_HABITS = "habits"
         const val SUMMARY_ID = 1
         const val OVERDUE_ID = 2
+        const val SHAKE_SERVICE_ID = 3
+        const val SHAKE_PROMPT_ID = 4
+        const val CH_SHAKE = "shake_service"
+        const val CH_SHAKE_PROMPT = "shake_prompt"
         fun taskNotificationId(taskId: Long) = (taskId % 1_000_000_000L).toInt() + 1000
         fun habitNotificationId(habitId: Long) = -(habitId % 1_000_000_000L).toInt() - 1000
     }
@@ -41,6 +45,8 @@ class Notifier @Inject constructor(@ApplicationContext private val context: Cont
             NotificationChannel(CH_OVERDUE, "Tarefas atrasadas", NotificationManager.IMPORTANCE_DEFAULT),
             NotificationChannel(CH_SUMMARY, "Resumo diário", NotificationManager.IMPORTANCE_DEFAULT),
             NotificationChannel(CH_HABITS, "Hábitos", NotificationManager.IMPORTANCE_DEFAULT),
+            NotificationChannel(CH_SHAKE, "Balançar para falar (ativo)", NotificationManager.IMPORTANCE_MIN),
+            NotificationChannel(CH_SHAKE_PROMPT, "Balançar para falar (aviso)", NotificationManager.IMPORTANCE_HIGH),
         ))
     }
 

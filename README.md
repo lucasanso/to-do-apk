@@ -1,8 +1,8 @@
 # TaskFlow — Intelligent Personal Productivity
 
-Aplicativo Android nativo de produtividade pessoal: **comandos de voz em português** (criar, concluir, apagar e listar tarefas falando, com resposta em voz alta), priorização inteligente explicável, planejamento diário, hábitos com sequências, calendário, estatísticas, lembretes, widget e backup. **100% offline**, sem conta, sem internet, sem analytics.
+Aplicativo Android nativo de produtividade pessoal: **comandos de voz em português** (criar, concluir, apagar e listar tarefas falando, com resposta em voz alta; **balance o celular** para falar sem abrir o app), priorização inteligente explicável, planejamento diário, hábitos com sequências, calendário, estatísticas, lembretes, widget e backup. **100% offline**, sem conta, sem internet, sem analytics.
 
-> **APK pronto:** [`release/TaskFlow-1.4.0.apk`](release/TaskFlow-1.4.0.apk) (assinado em modo release, ~3,7 MB, Android 8.0+). Instala por cima das versões anteriores sem perder dados.
+> **APK pronto:** [`release/TaskFlow-1.5.0.apk`](release/TaskFlow-1.5.0.apk) (assinado em modo release, ~3,7 MB, Android 8.0+). Instala por cima das versões anteriores sem perder dados.
 
 ## Capturas de tela
 
@@ -12,9 +12,9 @@ Aplicativo Android nativo de produtividade pessoal: **comandos de voz em portugu
 |---|---|---|---|---|
 | ![](docs/screenshots/01-hoje.png) | ![](docs/screenshots/10-voz-criar.png) | ![](docs/screenshots/11-voz-concluir.png) | ![](docs/screenshots/12-voz-apagar.png) | ![](docs/screenshots/13-voz-listar.png) |
 
-| Voz das respostas | Tarefas | Prioridade explicada | Meu dia | Hábitos |
+| Balançar para falar | Voz das respostas | Tarefas | Prioridade explicada | Meu dia |
 |---|---|---|---|---|
-| ![](docs/screenshots/14-voz-escolha.png) | ![](docs/screenshots/02-tarefas.png) | ![](docs/screenshots/03-detalhe-prioridade.png) | ![](docs/screenshots/04-meu-dia.png) | ![](docs/screenshots/05-habitos.png) |
+| ![](docs/screenshots/15-balancar-para-falar.png) | ![](docs/screenshots/14-voz-escolha.png) | ![](docs/screenshots/02-tarefas.png) | ![](docs/screenshots/03-detalhe-prioridade.png) | ![](docs/screenshots/04-meu-dia.png) |
 
 Renderizadas do app real com dados de exemplo (o app começa vazio). Para regerar:
 
@@ -28,12 +28,13 @@ As imagens saem em `app/build/screenshots/`.
 
 ## Instalação no Galaxy S26
 
-1. Copie `release/TaskFlow-1.4.0.apk` para o celular (cabo USB, Google Drive, e-mail para si mesmo etc.).
+1. Copie `release/TaskFlow-1.5.0.apk` para o celular (cabo USB, Google Drive, e-mail para si mesmo etc.).
 2. Abra o arquivo no app **Meus Arquivos**. Na primeira vez, o Android pede para permitir "Instalar apps desconhecidos" para o app usado para abrir — permita.
 3. Se o **Auto Blocker** da Samsung estiver ativo (Configurações › Segurança e privacidade › Auto Blocker), desative-o temporariamente para instalar.
 4. Ao abrir o TaskFlow, permita **notificações**. Para lembretes no minuto exato, vá em *Configurações do app › Notificações › Lembretes pontuais* e ative "Alarmes e lembretes".
 5. Widget: segure a tela inicial › Widgets › TaskFlow · Prioridades.
 6. Voz: no primeiro uso do microfone, permita o acesso. Para atalho de hardware, veja [Voz e IA do S26](#voz-e-ia-do-galaxy-s26).
+7. Balançar para falar (opcional): veja [Balançar para falar](#balançar-para-falar).
 
 Atualizações futuras precisam ser assinadas com a mesma chave; se a chave mudar, o Android exige desinstalar antes — exporte um backup em Configurações › Dados e importe depois.
 
@@ -93,11 +94,26 @@ Quando o comando veio pelo microfone, o app também **lê a resposta em voz alta
 | **Abrir o app por voz ou botão** | Funciona: Bixby e Gemini abrem apps pelo nome, e o botão lateral abre qualquer app | **“TaskFlow Voz”**: entrada separada que abre direto no microfone |
 
 **Atalhos práticos no S26**
+- **Balançar o celular:** abre o microfone de qualquer app, com o TaskFlow fechado. Veja [Balançar para falar](#balançar-para-falar).
 - **Botão lateral:** Configurações › Recursos avançados › Botão lateral › Pressionar duas vezes › Abrir app › **TaskFlow Voz**. Dois toques e já está ouvindo.
 - **Bixby ou Gemini:** “abrir TaskFlow Voz”.
 - **Widget:** o ícone de microfone abre a captura por voz.
 - **Ícone do app (pressão longa):** atalhos *Falar* e *Digitar tarefa*.
 - **De qualquer app:** selecione um texto › *TaskFlow*, ou *Compartilhar › TaskFlow*. A frase é interpretada na hora; dá para mandar uma resposta do Gemini para virar tarefa.
+
+### Balançar para falar
+
+Com o recurso ligado, **balance o celular** (três sacudidas rápidas, como quem chacoalha um termômetro) e o microfone do TaskFlow abre por cima do app que estiver na tela. Fale a tarefa; a janela registra e fecha sozinha. Funciona com o TaskFlow fechado.
+
+**Como ativar** (uma vez):
+1. TaskFlow › Configurações › **Balançar para falar** › ligue a chave.
+2. **Abrir o microfone direto › Permitir** › ative *TaskFlow* em "Aparecer sobre outros apps". Sem isso, o balanço mostra um aviso no topo da tela ("Falar com o TaskFlow") e você toca nele para falar.
+3. **Funcionar com o app fechado › Permitir** › *Permitir*. Isso deixa a bateria do TaskFlow como "Sem restrições", para a Samsung não desligar o recurso. Se preferir conferir à mão: Configurações do Android › Apps › TaskFlow › Bateria › **Sem restrições**.
+4. Ajuste a **sensibilidade**: *Baixa* (precisa de um balanço forte), *Média* (padrão) ou *Alta* (balanço leve).
+
+**Quando dispara.** Só com a **tela ligada e o celular desbloqueado**: no bolso, na bolsa ou com a tela apagada o sensor fica desligado, o que também economiza bateria. Não dispara durante ligações nem se a janela de voz já estiver aberta. Andar, correr ou um solavanco isolado não contam; são precisos três picos fortes em pouco mais de um segundo. O celular vibra de leve quando reconhece o gesto.
+
+**O aviso fixo na barra de notificações.** O Android só entrega o sensor de movimento para um app fechado por meio de um serviço em primeiro plano, que obrigatoriamente mostra uma notificação. Ela fica silenciosa e minimizada ("Balançar para falar está ativo") e tem o botão **Desligar**. Para escondê-la, segure a notificação › desative a categoria *Balançar para falar (serviço)*; o recurso continua funcionando. Depois de reiniciar o celular ou atualizar o app, o recurso volta sozinho.
 
 **Privacidade.** O reconhecimento de voz usa o serviço do aparelho, preferindo o modo no aparelho. Em Configurações › Voz e IA, o app mostra se o Português offline está instalado e oferece o download. O Gemini Nano roda no AICore do sistema. A resposta falada usa o leitor de texto do aparelho (Samsung ou Google), que funciona offline com a voz em português instalada. O TaskFlow continua **sem permissão de internet**: a biblioteca do ML Kit traz um módulo de telemetria do Google, mas a permissão de rede dele foi removida no manifesto, então nada sai do app.
 
@@ -113,7 +129,7 @@ Quando o comando veio pelo microfone, o app também **lê a resposta em voz alta
 |---|---|
 | **Hoje** | Tela minimalista: saudação, uma linha de progresso do dia (com atrasadas, se houver), **Foco** (tarefas recomendadas) e hábitos do dia. Detalhes ficam a um toque. |
 | **Tarefas** | Título, descrição, categoria, prioridade (baixa → crítica), criação, prazo, horário, duração, status (pendente / em andamento / concluída / arquivada), tags, subtarefas, lembrete, recorrência e **dependências**. Criar, editar, excluir (com desfazer), duplicar, concluir, adiar, arquivar, promover subtarefa a tarefa. Deslize → conclui, ← adia. |
-| **Captura** | Microfone ou teclado no mesmo lugar (ver [Voz e IA](#voz-e-ia-do-galaxy-s26)). Digitando, também vale a sintaxe compacta `!alta`, `#tag`, `@categoria`. |
+| **Captura** | Microfone ou teclado no mesmo lugar (ver [Voz e IA](#voz-e-ia-do-galaxy-s26)); ou balance o celular em qualquer tela. Digitando, também vale a sintaxe compacta `!alta`, `#tag`, `@categoria`. |
 | **Busca e filtros** | Busca sem acento em título, descrição, categoria, tags e subtarefas. Na tela: Abertas, Hoje, Atrasadas, Concluídas. No menu de filtros: Amanhã, Esta semana, Sem prazo, Alta prioridade, Arquivadas, categorias e 4 ordenações. |
 | **Priorização** | Pontuação 0–100 por regras locais, matriz urgente × importante, sinalizadores (urgente, importante, rápida, atrasada, adiada com frequência, bloqueada, desbloqueia outras) e cartão "Por que esta prioridade?" com cada fator e seus pontos. |
 | **Meu dia** | Selecionar tarefas, ordem por **arrastar e soltar** (segure a alça; ações de acessibilidade "mover para cima/baixo"), tempo total vs. disponível, **alerta de sobrecarga**, iniciar/concluir, planejamento automático pelo ranking. |
@@ -173,6 +189,7 @@ app/src/main/java/com/taskflow/
 │   └── backup/        DTOs, BackupValidator, BackupManager
 ├── di/                módulos Hilt
 ├── notifications/     Notifier, AlarmReminderScheduler, Receivers, Workers, ReminderSync
+├── shake/             ShakeDetector, ShakeService (primeiro plano), ShakeController
 ├── widget/            Glance widget + ação de concluir
 ├── navigation/        Routes, TaskFlowNavHost (barra inferior, botão de microfone)
 └── presentation/      theme, components, dashboard, tasks, taskdetail, taskedit, myday,
@@ -242,6 +259,7 @@ TaskFlow Voz (botão lateral, Bixby/Gemini “abrir”, widget, compartilhar) �
 7. **v1.2 — Apagar por voz** — tarefas e hábitos existentes (inclusive concluídos), com confirmação, escolha entre parecidos e desfazer completo (mesmo id, Meu dia e dependências).
 8. **v1.3 — Listar por voz** — perguntas sobre o dia, períodos, atrasadas, concluídas, prioridades, hábitos, categoria e assunto; resposta na tela (com concluir no lugar) e em voz alta.
 9. **v1.4 — Voz das respostas e microfone estável** — escolha de mecanismo, voz, velocidade e tom dentro do app, com amostra. O microfone deixou de falhar às vezes com os erros 5 e 11: cada escuta tem identificador próprio (avisos de escutas canceladas são ignorados), o reinício espera o serviço liberar, erros passageiros são repetidos sozinhos com um reconhecedor novo, e o modo no aparelho cai para o serviço do sistema se insistir em falhar. 157 testes.
+10. **v1.5 — Balançar para falar** — serviço em primeiro plano com o acelerômetro (só com tela ligada e desbloqueada), detector de três picos com sensibilidade ajustável, abertura direta da janela de voz com "Aparecer sobre outros apps" e aviso para tocar quando o sistema não deixa, religado após reinício e atualização. 175 testes.
 
 ---
 
@@ -292,13 +310,15 @@ keytool -genkeypair -keystore keystore/taskflow-release.jks -alias taskflow -key
 | `SpeechInputTest` (Robolectric) | erros 5 e 11 reproduzidos no serviço de voz simulado: aviso de sessão cancelada ignorado, nova tentativa automática, troca para o serviço do sistema, o que já foi ouvido é aproveitado, parar antes de começar, mensagem final sem código. A versão 1.3.0 falha em 7 dos 8 |
 | `VoiceChoiceTest` (Robolectric) | rótulos das vozes Google/Samsung; a voz escolhida é a que fala; voz removida ou não baixada cai para o português; mecanismo sem português ou com falha é informado |
 | `VoiceViewModelTest` (Robolectric) | pergunta falada gera resposta em voz alta e digitada não; concluir pela lista atualiza a resposta; rotas de “Abrir na lista” |
-| `AppSmokeTest` (Robolectric + Compose) | sobe o app real: cria e conclui tarefa por frase, desfaz; apaga por frase com confirmação, cancela, desfaz e "criar como nova tarefa"; pergunta “o que eu tenho hoje?”, conclui pela lista e abre a lista filtrada; escolhe a voz nas Configurações e confere que a amostra tocou com ela; detalhe, todas as abas, hábito, telas secundárias, edição, Meu dia, adiar, excluir e desfazer |
+| `AppSmokeTest` (Robolectric + Compose) | sobe o app real: cria e conclui tarefa por frase, desfaz; apaga por frase com confirmação, cancela, desfaz e "criar como nova tarefa"; pergunta “o que eu tenho hoje?”, conclui pela lista e abre a lista filtrada; escolhe a voz nas Configurações e confere que a amostra tocou com ela; liga o Balançar para falar (salva, inicia o serviço, atualiza o status da permissão ao voltar, sensibilidade) e desliga; detalhe, todas as abas, hábito, telas secundárias, edição, Meu dia, adiar, excluir e desfazer |
 | `VoiceEntryTest` | “Compartilhar → TaskFlow”: a frase compartilhada vira tarefa com data e hora |
+| `ShakeDetectorTest` | balanço firme dispara uma vez; celular parado, andar, correr, solavanco isolado e trancos lentos espaçados não disparam; intervalo entre disparos; níveis de sensibilidade |
+| `ShakeServiceTest` (Robolectric) | serviço em primeiro plano com notificação e botão Desligar; balanço abre a janela de voz com a permissão, mostra o aviso para tocar sem ela ou quando o sistema segura a abertura; movimento leve não faz nada; sensor desligado com tela bloqueada ou apagada; nada durante ligação ou com a janela já aberta; desligar pela notificação; parar quando o recurso é desligado |
 | `ScreenshotTest` | gera as capturas de tela acima (só roda com `-Pscreenshots`) |
 
 ## Privacidade e permissões
 
-Sem permissão de **INTERNET**: o app não tem como transmitir dados. A permissão que a biblioteca do ML Kit adicionaria foi removida no manifesto com `tools:node="remove"`. Backup do Android e transferência entre aparelhos estão desativados; o backup é só o JSON que você exporta. Permissões pedidas: notificações, alarmes exatos (opcional), reagendar após reinício, vibração e **microfone** (só quando você toca para falar). `ACCESS_NETWORK_STATE` e `FOREGROUND_SERVICE` vêm do WorkManager e `BIND_SERVICE` do AICore vem do Gemini Nano; nenhuma delas dá acesso à rede.
+Sem permissão de **INTERNET**: o app não tem como transmitir dados. A permissão que a biblioteca do ML Kit adicionaria foi removida no manifesto com `tools:node="remove"`. Backup do Android e transferência entre aparelhos estão desativados; o backup é só o JSON que você exporta. Permissões pedidas: notificações, alarmes exatos (opcional), reagendar após reinício, vibração e **microfone** (só quando você toca para falar). Só para o **Balançar para falar**, que vem desligado: serviço em primeiro plano (`FOREGROUND_SERVICE_SPECIAL_USE`), "Aparecer sobre outros apps" (`SYSTEM_ALERT_WINDOW`, usada apenas para abrir a janela de voz depois do balanço) e pedido de bateria sem restrições. O sensor de movimento não precisa de permissão e os dados dele não são gravados. `ACCESS_NETWORK_STATE` vem do WorkManager e `BIND_SERVICE` do AICore vem do Gemini Nano; nenhuma delas dá acesso à rede.
 
 ## Limitações conhecidas
 
@@ -306,6 +326,7 @@ Sem permissão de **INTERNET**: o app não tem como transmitir dados. A permiss�
 - O Gemini Nano depende do AICore do aparelho e da disponibilidade do modelo; se não estiver pronto, o app usa o interpretador local sem avisar erro. A integração com o **assistente** Gemini (AppFunctions) ainda não está aberta a apps instalados por APK.
 - Se o serviço de voz do celular falhar várias vezes seguidas (raro), o app mostra "O serviço de voz do celular não respondeu. Toque no microfone para tentar de novo."
 - Sem o pacote de Português offline, o reconhecimento de voz usa o serviço do sistema, que pode processar o áudio na nuvem do provedor (Google/Samsung). O TaskFlow em si não acessa a rede.
+- **Balançar para falar** não funciona com o celular bloqueado (por segurança, o Android não abre apps por cima da tela de bloqueio; destrave e balance). Em modo de economia de energia máxima da Samsung, ou se o app for colocado em "Apps em suspensão profunda", o serviço pode ser encerrado; abrir o TaskFlow uma vez religa. O limiar do gesto foi calibrado com o perfil típico de acelerômetro; se disparar demais ou de menos no S26, troque a sensibilidade.
 - Sem "Alarmes e lembretes" permitido, o Android pode atrasar lembretes alguns minutos (modo econômico).
 - O widget se atualiza a cada alteração enquanto o app está em memória, ao concluir pelo próprio widget/notificação e a cada 30 min.
 - Interface somente em português (pt-BR).
