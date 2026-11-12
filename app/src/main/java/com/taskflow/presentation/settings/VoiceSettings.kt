@@ -157,6 +157,15 @@ fun VoiceSettingsSection(s: AppSettings, onUpdate: ((AppSettings) -> AppSettings
         }
         Switch(s.voiceFirst, { b -> onUpdate { it.copy(voiceFirst = b) } })
     }
+    Row(Modifier.fillMaxWidth().clickable { onUpdate { it.copy(speakReplies = !s.speakReplies) } }.padding(horizontal = 20.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text("Responder em voz alta", style = MaterialTheme.typography.bodyLarge)
+            Text("Quando você fala, o app lê a resposta (por exemplo, a lista de hoje) com a voz do aparelho", style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Switch(s.speakReplies, { b -> onUpdate { it.copy(speakReplies = b) } })
+    }
     Row(Modifier.fillMaxWidth().clickable { vm.setLauncher(!v.launcherEnabled) }.padding(horizontal = 20.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {

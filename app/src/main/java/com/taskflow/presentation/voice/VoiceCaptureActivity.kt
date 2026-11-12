@@ -43,6 +43,7 @@ class VoiceCaptureActivity : ComponentActivity() {
                     onDismiss = { finish() },
                     onOpenTask = { id -> openApp("task/$id") },
                     onOpenEditor = { openApp("edit/0?date=${Long.MIN_VALUE}") },
+                    onOpenRoute = { route -> openApp(route) },
                 )
             }
         }

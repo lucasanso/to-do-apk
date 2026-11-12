@@ -32,6 +32,11 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.foundation.border
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import com.taskflow.domain.usecase.ListedItem
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -97,20 +102,30 @@ fun VoiceCaptureSheet(
     onOpenEditor: () -> Unit,
     initialText: String? = null,
     autoClose: Boolean = false,
+    onOpenRoute: (String) -> Unit = {},
 ) {
     val context = LocalContext.current
     val ui by vm.ui.collectAsStateWithLifecycle()
     val speech = remember { SpeechInput(context.applicationContext) }
+    // Spoken answers: created on first use; only replies produced after this sheet opened are read.
+    var voiceReply by remember { mutableStateOf<VoiceReply?>(null) }
+    val reply by vm.reply.collectAsStateWithLifecycle()
+    val firstReplyId = remember { vm.reply.value?.id ?: 0L }
+    LaunchedEffect(reply) {
+        val r = reply ?: return@LaunchedEffect
+        if (r.id > firstReplyId) (voiceReply ?: VoiceReply(context).also { voiceReply = it }).speak(r.text)
+    }
     var typing by remember { mutableStateOf(!startWithVoice || initialText != null) }
     var text by remember { mutableStateOf("") }
     val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val systemDialog = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { r ->
         val said = r.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
-        if (r.resultCode == Activity.RESULT_OK && !said.isNullOrBlank()) vm.submit(said) else vm.idle()
+        if (r.resultCode == Activity.RESULT_OK && !said.isNullOrBlank()) vm.submit(said, fromVoice = true) else vm.idle()
     }
 
     fun listen() {
+        voiceReply?.stop()
         typing = false
         if (!speech.isAvailable()) {
             // No recognition service bound: use the system's speech dialog, or fall back to typing.
@@ -125,7 +140,7 @@ fun VoiceCaptureSheet(
                 SpeechInput.Event.Ready -> Unit
                 is SpeechInput.Event.Level -> vm.listening("", e.rms)
                 is SpeechInput.Event.Partial -> vm.listening(e.text, 0.3f)
-                is SpeechInput.Event.Final -> vm.submit(e.text)
+                is SpeechInput.Event.Final -> vm.submit(e.text, fromVoice = true)
                 is SpeechInput.Event.Error -> vm.error(e.message)
             }
         }
@@ -144,7 +159,7 @@ fun VoiceCaptureSheet(
         vm.idle()
         if (initialText != null) vm.submit(initialText) else if (!typing) requestListen()
     }
-    DisposableEffect(Unit) { onDispose { speech.stop() } }
+    DisposableEffect(Unit) { onDispose { speech.stop(); voiceReply?.shutdown() } }
     LaunchedEffect(ui) {
         val u = ui
         if (autoClose && u is VoiceUi.Done && !u.undone) { delay(3_500); onDismiss() }
@@ -165,6 +180,9 @@ fun VoiceCaptureSheet(
                         is VoiceUi.Choose -> Choose(state, vm.time.today()) { vm.choose(state.text, it, state.action) }
                         is VoiceUi.ConfirmDelete -> ConfirmDelete(state, vm.time.today(), onConfirm = vm::confirmDelete, onCancel = vm::idle)
                         is VoiceUi.Message -> Message(state) { vm.createInstead(it) }
+                        is VoiceUi.Listing -> ListingView(state, vm.time.today(), onToggle = vm::toggleListed,
+                            onOpenItem = { if (it.kind == CompletionCandidate.Kind.TASK) onOpenTask(it.id) },
+                            onOpenAll = vm.routeFor(state.listing)?.let { route -> { onOpenRoute(route) } })
                     }
                 }
             }
@@ -203,7 +221,7 @@ fun VoiceCaptureSheet(
 private fun Hint(typing: Boolean) {
     Text(if (typing) "Digite o que precisa fazer" else "Toque no microfone e fale", style = MaterialTheme.typography.titleMedium)
     Spacer(Modifier.height(8.dp))
-    Text("“Reunião amanhã às 15h por uma hora”\n“Já paguei a fatura” · “Apaga a tarefa X”", style = MaterialTheme.typography.bodyMedium,
+    Text("“Reunião amanhã às 15h por uma hora”\n“Já paguei a fatura” · “O que eu tenho hoje?”", style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
 }
 
@@ -311,5 +329,59 @@ private fun Message(state: VoiceUi.Message, onCreate: (String) -> Unit) {
         modifier = Modifier.width(320.dp).semantics { liveRegion = LiveRegionMode.Polite })
     if (state.offerCreate && state.text != null) TextButton(onClick = { onCreate(state.text) }, modifier = Modifier.padding(top = 4.dp)) {
         Text("Criar como nova tarefa")
+    }
+}
+
+@Composable
+private fun ListingView(
+    state: VoiceUi.Listing,
+    today: java.time.LocalDate,
+    onToggle: (ListedItem) -> Unit,
+    onOpenItem: (ListedItem) -> Unit,
+    onOpenAll: (() -> Unit)?,
+) {
+    val l = state.listing
+    Text(l.query.label, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
+    Text(if (l.total == 0) l.spoken else "${l.total} ${if (l.total == 1) "item" else "itens"}",
+        style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center,
+        modifier = Modifier.padding(top = 2.dp).semantics { liveRegion = LiveRegionMode.Polite })
+    Column(Modifier.fillMaxWidth().heightIn(max = 400.dp).verticalScroll(rememberScrollState()).padding(top = 8.dp)) {
+        l.sections.forEach { sec ->
+            if (l.sections.size > 1) Text(sec.title.uppercase(), style = com.taskflow.presentation.theme.SectionLabel,
+                color = if (sec.title == "Atrasadas") TaskFlowColors.critical else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 12.dp, bottom = 2.dp))
+            sec.items.take(MAX_ROWS).forEach { item -> ListedRow(item, onToggle, onOpenItem) }
+            if (sec.items.size > MAX_ROWS) Text("+ ${sec.items.size - MAX_ROWS}", style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 44.dp, top = 4.dp))
+        }
+    }
+    if (onOpenAll != null && l.total > 0) TextButton(onClick = onOpenAll, modifier = Modifier.padding(top = 4.dp)) { Text("Abrir na lista") }
+}
+
+private const val MAX_ROWS = 10
+
+@Composable
+private fun ListedRow(item: ListedItem, onToggle: (ListedItem) -> Unit, onOpenItem: (ListedItem) -> Unit) {
+    Row(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small).clickable { onOpenItem(item) }.padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            Modifier.size(36.dp).clip(CircleShape).clickable { onToggle(item) }
+                .semantics { contentDescription = if (item.done) "Desmarcar ${item.title}" else "Concluir ${item.title}" },
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(Modifier.size(20.dp).clip(CircleShape)
+                .background(if (item.done) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent)
+                .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape), contentAlignment = Alignment.Center) {
+                if (item.done) Icon(Icons.Outlined.Check, null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(13.dp))
+            }
+        }
+        Spacer(Modifier.width(8.dp))
+        Column(Modifier.weight(1f)) {
+            Text(item.title, style = MaterialTheme.typography.bodyLarge, maxLines = 2,
+                textDecoration = if (item.done) androidx.compose.ui.text.style.TextDecoration.LineThrough else null,
+                color = if (item.done) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface)
+            if (item.detail.isNotEmpty()) Text(item.detail, style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+        }
     }
 }

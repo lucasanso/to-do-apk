@@ -23,6 +23,7 @@ sealed interface Interpretation {
     data class Create(val draft: TaskDraft, override val source: InterpretationSource) : Interpretation
     data class Complete(val query: String, val match: TaskMatch, override val source: InterpretationSource) : Interpretation
     data class Delete(val query: String, val match: TaskMatch, override val source: InterpretationSource) : Interpretation
+    data class Query(val query: ListQuery, override val source: InterpretationSource) : Interpretation
     data class Unknown(val text: String, override val source: InterpretationSource = InterpretationSource.RULES) : Interpretation
 }
 
@@ -50,6 +51,11 @@ object VoiceInterpreter {
     ): Interpretation {
         val rules = VoiceCommandParser.parse(text, now, categories)
         val intent = model?.intent?.lowercase()?.trim()
+        if (rules is VoiceIntent.Query) return Interpretation.Query(rules.query, InterpretationSource.RULES)
+        // Listing is read-only, so the model may recognize questions the rules missed ("tô devendo alguma coisa?"),
+        // as long as the sentence has no explicit command wording ("me lembra", "adiciona", "apaga", "concluí"…).
+        if (intent == "list" && (rules is VoiceIntent.Unknown || (rules is VoiceIntent.Create && !VoiceCommandParser.hasCreateWording(text))))
+            return Interpretation.Query(VoiceQueryParser.scope(TokenStream(text).joined, now, categories), InterpretationSource.ON_DEVICE_AI)
         if (rules is VoiceIntent.Delete) return deleteWithModel(rules, model?.takeIf { intent == "delete" }, candidates)
         // A model "delete" without delete wording in the sentence is ignored (handled like no model).
         if (model == null || intent !in setOf("create", "complete")) return fromRules(rules, candidates)
@@ -68,7 +74,7 @@ object VoiceInterpreter {
             }
             else -> when (rules) {
                 // Explicit completion/deletion wording wins over the model.
-                is VoiceIntent.Complete, is VoiceIntent.Delete -> fromRules(rules, candidates)
+                is VoiceIntent.Complete, is VoiceIntent.Delete, is VoiceIntent.Query -> fromRules(rules, candidates)
                 is VoiceIntent.Create -> Interpretation.Create(refine(rules.draft, text, now, categories, model), InterpretationSource.ON_DEVICE_AI)
                 is VoiceIntent.Unknown -> {
                     val title = model.title?.takeIf { titleIsGrounded(it, text) }
@@ -85,6 +91,7 @@ object VoiceInterpreter {
         is VoiceIntent.Create -> Interpretation.Create(rules.draft, InterpretationSource.RULES)
         is VoiceIntent.Complete -> Interpretation.Complete(rules.query, TaskMatcher.match(rules.query, candidates.filter { it.open }), InterpretationSource.RULES)
         is VoiceIntent.Delete -> Interpretation.Delete(rules.query, TaskMatcher.match(rules.query, candidates, rules.date), InterpretationSource.RULES)
+        is VoiceIntent.Query -> Interpretation.Query(rules.query, InterpretationSource.RULES)
         is VoiceIntent.Unknown -> Interpretation.Unknown(rules.text)
     }
 

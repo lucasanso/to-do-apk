@@ -135,6 +135,10 @@ fun TaskFlowNavHost(
                 onDismiss = { capture = null },
                 onOpenTask = { id -> capture = null; navigate(Routes.taskEdit(id)) },
                 onOpenEditor = { capture = null; navigate(Routes.taskEdit()) },
+                onOpenRoute = { route ->
+                    capture = null
+                    nav.navigate(route) { popUpTo(nav.graph.findStartDestination().id) { saveState = true }; launchSingleTop = true }
+                },
             )
         }
     }

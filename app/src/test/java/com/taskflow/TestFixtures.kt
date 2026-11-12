@@ -88,3 +88,22 @@ class FakePlan : com.taskflow.domain.repository.PlanRepository {
     /** Mirrors the DB cascade when a task is deleted. */
     fun cascade(taskId: Long) { items.value = items.value.filterNot { it.taskId == taskId } }
 }
+
+class FakeHabitRepository(list: List<com.taskflow.domain.model.Habit> = emptyList()) : com.taskflow.domain.repository.HabitRepository {
+    val habits = list.associateBy { it.id }.toMutableMap()
+    val logs = MutableStateFlow<Map<Long, Set<LocalDate>>>(emptyMap())
+    override fun observeAll(): Flow<List<com.taskflow.domain.model.Habit>> = MutableStateFlow(habits.values.toList())
+    override fun observeLogs(): Flow<Map<Long, Set<LocalDate>>> = logs
+    override suspend fun get(id: Long) = habits[id]
+    override suspend fun getAll() = habits.values.toList()
+    override suspend fun upsert(habit: com.taskflow.domain.model.Habit): Long {
+        val id = if (habit.id == 0L) (habits.keys.maxOrNull() ?: 0) + 1 else habit.id
+        habits[id] = habit.copy(id = id); return id
+    }
+    override suspend fun delete(id: Long) { habits.remove(id); logs.value = logs.value - id }
+    override suspend fun setDone(habitId: Long, date: LocalDate, done: Boolean) {
+        val cur = logs.value[habitId].orEmpty()
+        logs.value = logs.value + (habitId to if (done) cur + date else cur - date)
+    }
+    override suspend fun logsFor(habitId: Long) = logs.value[habitId].orEmpty()
+}

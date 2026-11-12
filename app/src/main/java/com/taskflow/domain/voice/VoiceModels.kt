@@ -19,6 +19,9 @@ sealed interface VoiceIntent {
      */
     data class Delete(val query: String, val date: LocalDate? = null) : VoiceIntent
 
+    /** A question or list request ("o que eu tenho hoje?", "quais tarefas estão atrasadas?"). Read-only. */
+    data class Query(val query: ListQuery) : VoiceIntent
+
     data class Unknown(val text: String) : VoiceIntent
 }
 

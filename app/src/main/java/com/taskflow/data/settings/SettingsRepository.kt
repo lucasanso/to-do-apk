@@ -31,6 +31,8 @@ data class AppSettings(
     val useOnDeviceAi: Boolean = true,
     /** The capture button starts listening right away (otherwise opens the keyboard). */
     val voiceFirst: Boolean = true,
+    /** Read answers aloud (on-device text-to-speech) when the command was spoken. */
+    val speakReplies: Boolean = true,
 )
 
 private val Context.dataStore by preferencesDataStore("settings")
@@ -49,6 +51,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val defaultReminder = intPreferencesKey("default_reminder")
         val onDeviceAi = booleanPreferencesKey("on_device_ai")
         val voiceFirst = booleanPreferencesKey("voice_first")
+        val speakReplies = booleanPreferencesKey("speak_replies")
     }
 
     val settings: Flow<AppSettings> = context.dataStore.data.map(::map)
@@ -67,6 +70,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         defaultReminderMinutes = p[K.defaultReminder] ?: 30,
         useOnDeviceAi = p[K.onDeviceAi] ?: true,
         voiceFirst = p[K.voiceFirst] ?: true,
+        speakReplies = p[K.speakReplies] ?: true,
     )
 
     suspend fun update(transform: (AppSettings) -> AppSettings) {
@@ -83,6 +87,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
             p[K.defaultReminder] = s.defaultReminderMinutes.coerceIn(0, 7 * 24 * 60)
             p[K.onDeviceAi] = s.useOnDeviceAi
             p[K.voiceFirst] = s.voiceFirst
+            p[K.speakReplies] = s.speakReplies
         }
     }
 }

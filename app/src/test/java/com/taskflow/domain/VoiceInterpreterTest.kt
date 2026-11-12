@@ -265,4 +265,19 @@ class VoiceInterpreterTest {
         assertEquals("Cancela a assinatura da academia", d.title)
         assertEquals(TODAY.plusDays(1), d.dueDate)
     }
+
+    // ---------- list
+
+    @Test fun `questions are answered by the rules and the model can catch the rest`() {
+        assertTrue(interpretDel("o que eu tenho hoje?") is Interpretation.Query)
+        // Rules don't understand this one; the model says "list" — safe because listing changes nothing.
+        val r = interpretDel("tô devendo alguma coisa amanhã", ModelReading("list"))
+        r as Interpretation.Query
+        assertEquals(TODAY.plusDays(1), r.query.from)
+        assertEquals(InterpretationSource.ON_DEVICE_AI, r.source)
+        // A model "list" never overrides an explicit command.
+        assertTrue(interpretDel("apaga a tarefa estudar SQL", ModelReading("list")) is Interpretation.Delete)
+        assertTrue(interpretDel("me lembra de comprar pão amanhã", ModelReading("list")) is Interpretation.Create)
+        assertTrue(interpretDel("concluí o relatório", ModelReading("list")) is Interpretation.Complete)
+    }
 }

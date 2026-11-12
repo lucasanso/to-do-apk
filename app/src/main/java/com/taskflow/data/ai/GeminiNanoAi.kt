@@ -88,10 +88,11 @@ class GeminiNanoAi @Inject constructor() : OnDeviceAi {
 object NanoPrompt {
     const val SYSTEM = """Você interpreta comandos de voz em português do Brasil para um app de tarefas.
 Responda SOMENTE com um objeto JSON, sem texto antes ou depois, neste formato:
-{"intent":"create|complete|delete|unknown","title":null,"when":null,"duration_minutes":null,"priority":null,"category":null,"target":null}
+{"intent":"create|complete|delete|list|unknown","title":null,"when":null,"duration_minutes":null,"priority":null,"category":null,"target":null}
 Regras:
 - intent "complete" quando a pessoa diz que já fez, terminou ou concluiu algo, ou pede para marcar algo como feito.
 - intent "delete" quando a pessoa pede para apagar, excluir, remover ou cancelar um item que já existe na lista.
+- intent "list" quando a pessoa pergunta o que tem para fazer, o que está pendente ou atrasado, ou pede para ver/listar tarefas ou hábitos.
 - intent "create" quando a pessoa quer registrar, anotar ou ser lembrada de algo. Caso contrário "unknown".
 - title: só para create. Título curto da atividade, sem data, hora, duração ou prioridade.
 - when: copie exatamente o trecho da frase que fala de data ou horário (ex.: "amanhã às 3 da tarde"), ou null.

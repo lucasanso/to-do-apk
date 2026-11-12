@@ -83,6 +83,8 @@ class ScreenshotTest {
             say("Reunião com o time amanhã às 3 da tarde por uma hora"); waitText("Tarefa criada"); shot("10-voz-criar")
             say("já paguei a fatura do cartão"); waitText("Concluída"); shot("11-voz-concluir")
             say("apaga a reunião com o time de amanhã"); waitText("Apagar esta tarefa?"); shot("12-voz-apagar")
+            rule.onNodeWithText("Cancelar").performClick()
+            say("o que eu tenho hoje?"); waitText("ATRASADAS"); shot("13-voz-listar")
         }
     }
 

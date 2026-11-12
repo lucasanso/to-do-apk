@@ -166,4 +166,29 @@ class AppSmokeTest {
         waitText("Cancela a assinatura da academia")
         rule.waitUntil(5_000) { rule.onAllNodesWithText("Comprar pão").fetchSemanticsNodes().isEmpty() }
     }
+
+    @Test fun voiceList() {
+        waitText("FOCO")
+        openCapture()
+        say("Pagar boleto hoje às 23h")
+        waitText("Tarefa criada")
+        say("Revisar contrato amanhã")
+        waitText("Tarefa criada")
+
+        // Ask, see the answer, check an item off right there.
+        say("o que eu tenho hoje?")
+        waitText("Pagar boleto")
+        waitText("1 item")
+        rule.onNodeWithContentDescription("Concluir Pagar boleto").performClick()
+        waitText("Hoje você não tem nada pendente.")
+
+        // Another day, then open the same list in the Tasks screen.
+        say("o que tenho amanhã?")
+        waitText("Revisar contrato")
+        rule.onNodeWithText("Abrir na lista").performClick()
+        waitText("Abertas")
+        waitText("Revisar contrato")
+        // The "Amanhã" filter is active (it shows a clear button).
+        rule.onNodeWithContentDescription("Limpar filtro").assertIsDisplayed()
+    }
 }

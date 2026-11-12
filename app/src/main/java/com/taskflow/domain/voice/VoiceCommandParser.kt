@@ -25,12 +25,17 @@ object VoiceCommandParser {
     fun parse(text: String, now: LocalDateTime, categories: List<String> = emptyList()): VoiceIntent {
         val s = TokenStream(text)
         if (s.toks.isEmpty()) return VoiceIntent.Unknown(text)
+        // Questions first: "o que eu fiz hoje?" is a question, not a completion.
+        VoiceQueryParser.detect(s.joined, now, categories)?.let { return VoiceIntent.Query(it) }
         detectDeletion(s, now, text)?.let { return it }
         detectCompletion(s)?.let { return it }
         s.take(CREATE_PREFIX)
         val draft = extractDraft(s, now, categories)
         return if (draft.title.isBlank()) VoiceIntent.Unknown(text) else VoiceIntent.Create(draft)
     }
+
+    /** True when the sentence says explicitly to create something ("me lembra", "adiciona", "preciso"…). */
+    fun hasCreateWording(text: String): Boolean = CREATE_PREFIX.containsMatchIn(TokenStream(text).joined)
 
     /** Reads the sentence as a new task, skipping intent detection ("cancela a assinatura" as a to-do). */
     fun parseAsCreate(text: String, now: LocalDateTime, categories: List<String> = emptyList()): TaskDraft {
@@ -176,7 +181,7 @@ object VoiceCommandParser {
     private val P_LOW = Regex("""\b(?:(?:com )?(?:prioridade baixa|baixa prioridade|sem pressa|quando der|sem urgencia))\b""")
     private val TAG = Regex("""\b(?:com )?(?:a )?(?:tag|etiqueta|hashtag) (\w+)\b""")
 
-    private fun extractDraft(s: TokenStream, now: LocalDateTime, categories: List<String>): TaskDraft {
+    internal fun extractDraft(s: TokenStream, now: LocalDateTime, categories: List<String>): TaskDraft {
         val today = now.toLocalDate()
         var recurrence: RecurrenceRule? = null
         var date: LocalDate? = null
